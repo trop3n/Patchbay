@@ -1,9 +1,12 @@
 import { PrismaClient, Role, SystemStatus, DiagramType, AssetStatus } from '@prisma/client'
+import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('Seeding database...')
+
+  const hashedPassword = await hash('admin123', 12)
 
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
@@ -12,11 +15,13 @@ async function main() {
       email: 'admin@patchbay.local',
       name: 'Admin User',
       username: 'admin',
+      password: hashedPassword,
       role: Role.ADMIN,
     },
   })
 
   console.log('Created admin user:', adminUser.username)
+  console.log('Admin credentials: admin@patchbay.local / admin123')
 
   const system = await prisma.system.upsert({
     where: { slug: 'main-conference-room' },

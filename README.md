@@ -7,7 +7,7 @@ A/V technical documentation and diagramming platform.
 - System documentation with markdown support
 - Interactive signal flow diagrams (React Flow + Excalidraw)
 - Asset inventory management
-- LDAP/Active Directory authentication
+- Local credentials authentication
 - Self-hosted via Docker
 
 ## Quick Start
@@ -19,15 +19,18 @@ npm install
 cp .env.example .env
 npx prisma generate
 npx prisma migrate dev
+npx prisma db seed
 npm run dev
 ```
+
+Default admin credentials: `admin@patchbay.local` / `admin123`
 
 ### Docker Development
 
 ```bash
 cd docker
 cp .env.example .env
-# Edit .env with your LDAP settings
+# Edit .env with your settings
 docker compose -f docker-compose.dev.yml up
 ```
 
@@ -47,11 +50,6 @@ docker compose up -d
 | `DATABASE_URL` | PostgreSQL connection string |
 | `NEXTAUTH_URL` | Public URL of your application |
 | `NEXTAUTH_SECRET` | Secret for JWT signing (generate with `openssl rand -base64 32`) |
-| `LDAP_URL` | LDAP server URL (e.g., `ldap://dc.company.local:389`) |
-| `LDAP_BIND_DN` | DN for LDAP bind account |
-| `LDAP_BIND_PASSWORD` | Password for LDAP bind account |
-| `LDAP_BASE_DN` | Base DN for user search |
-| `LDAP_SEARCH_FILTER` | LDAP search filter (default: `(sAMAccountName={username})`) |
 
 ## Scripts
 

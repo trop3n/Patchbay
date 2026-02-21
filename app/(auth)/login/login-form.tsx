@@ -21,19 +21,19 @@ export function LoginForm() {
     setError(null)
 
     const formData = new FormData(event.currentTarget)
-    const username = formData.get('username') as string
+    const email = formData.get('email') as string
     const password = formData.get('password') as string
 
     try {
       const result = await signIn('credentials', {
-        username,
+        email,
         password,
         redirect: false,
         callbackUrl,
       })
 
       if (result?.error) {
-        setError('Invalid username or password')
+        setError('Invalid email or password')
       } else {
         router.push(callbackUrl)
       }
@@ -54,8 +54,15 @@ export function LoginForm() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" name="username" required autoComplete="username" />
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="admin@patchbay.local"
+                required
+                autoComplete="email"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

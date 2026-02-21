@@ -27,7 +27,7 @@ npx prisma studio            # Open database GUI
 
 ## Tech Stack
 
-Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5 (LDAP/AD), Tailwind CSS + shadcn/ui, React Flow + Excalidraw, Zod, Jest + React Testing Library
+Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5 (local credentials), Tailwind CSS + shadcn/ui, React Flow + Excalidraw, Zod, Jest + React Testing Library
 
 ## Project Structure
 
@@ -92,7 +92,7 @@ import type { System } from '@/types'
 - **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRY_COUNT`)
 - **Database models**: PascalCase (`System`, `Diagram`)
 - **API routes**: kebab-case (`/api/systems/[id]/route.ts`)
-- **Environment variables**: SCREAMING_SNAKE_CASE (`DATABASE_URL`, `LDAP_URL`)
+- **Environment variables**: SCREAMING_SNAKE_CASE (`DATABASE_URL`, `NEXTAUTH_SECRET`)
 
 ### Error Handling
 
@@ -145,7 +145,7 @@ Use conventional commits format, keep first line under 72 characters:
 
 ```
 feat(diagrams): add signal flow node palette
-fix(auth): handle LDAP connection timeout
+fix(auth): handle invalid credentials
 ```
 
 ## Security

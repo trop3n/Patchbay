@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
-import ldap from 'ldapjs'
+import { compare } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import type { Role } from '@prisma/client'
 
@@ -29,96 +29,40 @@ declare module '@auth/core/jwt' {
   }
 }
 
-async function verifyLDAPCredentials(username: string, password: string): Promise<{ email: string; name: string } | null> {
-  return new Promise((resolve) => {
-    const client = ldap.createClient({
-      url: process.env.LDAP_URL!,
-    })
-
-    const bindDN = process.env.LDAP_SEARCH_FILTER!.replace('{username}', username)
-
-    client.bind(bindDN, password, (err: Error | null) => {
-      if (err) {
-        client.destroy()
-        resolve(null)
-        return
-      }
-
-      client.search(process.env.LDAP_BASE_DN!, {
-        filter: process.env.LDAP_SEARCH_FILTER!.replace('{username}', username),
-        scope: 'sub',
-      }, (err: Error | null, res: ldap.SearchCallbackResponse) => {
-        if (err) {
-          client.destroy()
-          resolve(null)
-          return
-        }
-
-        let user: { email: string; name: string } | null = null
-
-        res.on('searchEntry', (entry: ldap.SearchEntry) => {
-          const pojo = entry.pojo
-          user = {
-            email: (pojo.attributes.find(a => a.type === 'mail')?.values[0]) || `${username}@company.local`,
-            name: (pojo.attributes.find(a => a.type === 'cn')?.values[0]) || username,
-          }
-        })
-
-        res.on('error', () => {
-          client.destroy()
-          resolve(null)
-        })
-
-        res.on('end', () => {
-          client.destroy()
-          resolve(user)
-        })
-      })
-    })
-  })
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
-      name: 'LDAP',
+      name: 'Credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
+        email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
+        if (!credentials?.email || !credentials?.password) {
           return null
         }
 
-        const ldapUser = await verifyLDAPCredentials(
-          credentials.username as string,
-          credentials.password as string
-        )
-
-        if (!ldapUser) {
-          return null
-        }
-
-        let user = await prisma.user.findUnique({
-          where: { username: credentials.username as string },
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
         })
 
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email: ldapUser.email,
-              name: ldapUser.name,
-              username: credentials.username as string,
-              role: 'VIEWER',
-            },
-          })
-        } else {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { lastLoginAt: new Date() },
-          })
+        if (!user || !user.password || !user.isActive) {
+          return null
         }
+
+        const isValid = await compare(
+          credentials.password as string,
+          user.password
+        )
+
+        if (!isValid) {
+          return null
+        }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        })
 
         return {
           id: user.id,
