@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   Monitor,
+  FileText,
   GitBranch,
   Package,
   Settings,
@@ -14,6 +15,7 @@ import {
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/systems', label: 'Systems', icon: Monitor },
+  { href: '/documents', label: 'Documents', icon: FileText },
   { href: '/diagrams', label: 'Diagrams', icon: GitBranch },
   { href: '/assets', label: 'Assets', icon: Package },
   { href: '/settings', label: 'Settings', icon: Settings },

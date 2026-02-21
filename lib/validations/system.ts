@@ -7,7 +7,6 @@ export const systemSchema = z.object({
   location: z.string().max(100).optional(),
   category: z.string().max(50).optional(),
   status: z.enum(['OPERATIONAL', 'DEGRADED', 'OFFLINE', 'MAINTENANCE', 'UNKNOWN']).optional(),
-  metadata: z.record(z.unknown()).optional(),
 })
 
 export type SystemInput = z.infer<typeof systemSchema>
