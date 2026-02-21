@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum SystemStatus {
+  OPERATIONAL
+  DEGRADED
+  OFFLINE
+  MAINTENANCE
+  UNKNOWN
+}
+
+enum DiagramType {
+  SIGNAL_FLOW
+  WHITEBOARD
+  NETWORK
+  RACK_LAYOUT
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_STORAGE
+  IN_REPAIR
+  RETIRED
+  LOST
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  WARNING
+  ERROR
+  UNKNOWN
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+model User {
+  id          String     @id @default(cuid())
+  email       String     @unique
+  name        String?
+  username    String     @unique
+  role        Role       @default(VIEWER)
+  isActive    Boolean    @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  systems   System[]
+  diagrams  Diagram[]
+  documents Document[]
+  assets    Asset[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model System {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?       @db.Text
+  location    String?
+  category    String?
+  status      SystemStatus  @default(OPERATIONAL)
+  metadata    Json?
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  diagrams  Diagram[]
+  documents Document[]
+  assets    Asset[]
+  devices   Device[]
+
+  @@map("systems")
+}
+
+model Diagram {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?     @db.Text
+  type         DiagramType
+  data         Json
+  thumbnailUrl String?
+  systemId     String?
+  system       System?     @relation(fields: [systemId], references: [id])
+  createdById  String
+  createdBy    User        @relation(fields: [createdById], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("diagrams")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  systemId    String?
+  system      System?  @relation(fields: [systemId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("documents")
+}
+
+model Asset {
+  id            String      @id @default(cuid())
+  name          String
+  serialNumber  String?
+  model         String?
+  manufacturer  String?
+  purchaseDate  DateTime?
+  warrantyEnd   DateTime?
+  location      String?
+  status        AssetStatus @default(ACTIVE)
+  notes         String?     @db.Text
+  systemId      String?
+  system        System?     @relation(fields: [systemId], references: [id])
+  createdById   String
+  createdBy     User        @relation(fields: [createdById], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("assets")
+}
+
+model Device {
+  id           String        @id @default(cuid())
+  name         String
+  ipAddress    String?
+  macAddress   String?
+  deviceType   String?
+  manufacturer String?
+  model        String?
+  status       DeviceStatus  @default(UNKNOWN)
+  lastSeenAt   DateTime?
+  systemId     String
+  system       System        @relation(fields: [systemId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  logs DeviceLog[]
+
+  @@map("devices")
+}
+
+model DeviceLog {
+  id        String   @id @default(cuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id])
+  level     LogLevel
+  message   String   @db.Text
+  source    String?
+  rawLog    String?  @db.Text
+  timestamp DateTime @default(now())
+
+  @@index([deviceId, timestamp])
+  @@map("device_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  changes    Json?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

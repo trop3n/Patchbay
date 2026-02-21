@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://patchbay:patchbay@db:5432/patchbay?schema=public
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - LDAP_URL=${LDAP_URL}
+      - LDAP_BIND_DN=${LDAP_BIND_DN}
+      - LDAP_BIND_PASSWORD=${LDAP_BIND_PASSWORD}
+      - LDAP_BASE_DN=${LDAP_BASE_DN}
+      - LDAP_SEARCH_FILTER=${LDAP_SEARCH_FILTER:-(sAMAccountName={username})}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - patchbay-network
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=patchbay
+      - POSTGRES_PASSWORD=patchbay
+      - POSTGRES_DB=patchbay
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U patchbay -d patchbay"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - patchbay-network
+
+volumes:
+  postgres_data:
+
+networks:
+  patchbay-network:
+    driver: bridge
