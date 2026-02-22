@@ -5,7 +5,7 @@ export const diagramSchema = z.object({
   description: z.string().max(5000).optional(),
   type: z.enum(['SIGNAL_FLOW', 'WHITEBOARD', 'NETWORK', 'RACK_LAYOUT']),
   systemId: z.string().cuid().optional().nullable(),
-  data: z.record(z.unknown()),
+  data: z.any(),
 })
 
 export type DiagramInput = z.infer<typeof diagramSchema>
