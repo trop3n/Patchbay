@@ -9,11 +9,13 @@ import {
   FileText,
   GitBranch,
   Package,
+  Search,
   Settings,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/search', label: 'Search', icon: Search },
   { href: '/systems', label: 'Systems', icon: Monitor },
   { href: '/documents', label: 'Documents', icon: FileText },
   { href: '/diagrams', label: 'Diagrams', icon: GitBranch },
