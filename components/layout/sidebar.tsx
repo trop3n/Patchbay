@@ -9,6 +9,7 @@ import {
   FileText,
   GitBranch,
   Package,
+  Server,
   Search,
   Settings,
 } from 'lucide-react'
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/documents', label: 'Documents', icon: FileText },
   { href: '/diagrams', label: 'Diagrams', icon: GitBranch },
   { href: '/assets', label: 'Assets', icon: Package },
+  { href: '/racks', label: 'Racks', icon: Server },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 

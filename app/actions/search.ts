@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
 interface SearchResult {
-  type: 'system' | 'document' | 'diagram' | 'asset'
+  type: 'system' | 'document' | 'diagram' | 'asset' | 'rack'
   id: string
   title: string
   description?: string | null
@@ -23,7 +23,7 @@ export async function search(query: string): Promise<SearchResult[]> {
   const searchTerm = query.trim().toLowerCase()
   const results: SearchResult[] = []
 
-  const [systems, documents, diagrams, assets] = await Promise.all([
+  const [systems, documents, diagrams, assets, racks] = await Promise.all([
     prisma.system.findMany({
       where: {
         OR: [
@@ -68,6 +68,16 @@ export async function search(query: string): Promise<SearchResult[]> {
       select: { id: true, name: true, manufacturer: true, model: true, system: { select: { name: true } } },
       take: 10,
     }),
+    prisma.rack.findMany({
+      where: {
+        OR: [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { location: { contains: searchTerm, mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true, name: true, height: true, system: { select: { name: true } } },
+      take: 10,
+    }),
   ])
 
   for (const system of systems) {
@@ -103,7 +113,7 @@ export async function search(query: string): Promise<SearchResult[]> {
       id: diagram.id,
       title: diagram.title,
       url: `/diagrams/${diagram.id}`,
-      meta: diagram.system 
+      meta: diagram.system
         ? `${typeLabels[diagram.type] || diagram.type} • ${diagram.system.name}`
         : typeLabels[diagram.type] || diagram.type,
     })
@@ -114,11 +124,22 @@ export async function search(query: string): Promise<SearchResult[]> {
       type: 'asset',
       id: asset.id,
       title: asset.name,
-      description: asset.manufacturer && asset.model 
+      description: asset.manufacturer && asset.model
         ? `${asset.manufacturer} ${asset.model}`
         : undefined,
       url: `/assets/${asset.id}`,
       meta: asset.system ? `Asset • ${asset.system.name}` : 'Asset',
+    })
+  }
+
+  for (const rack of racks) {
+    results.push({
+      type: 'rack',
+      id: rack.id,
+      title: rack.name,
+      description: `${rack.height}U Rack`,
+      url: `/racks/${rack.id}`,
+      meta: rack.system ? `Rack • ${rack.system.name}` : 'Rack',
     })
   }
 

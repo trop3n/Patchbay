@@ -68,6 +68,7 @@ model User {
   diagrams  Diagram[]
   documents Document[]
   assets    Asset[]
+  racks     Rack[]
   auditLogs AuditLog[]
 
   @@map("users")
@@ -91,6 +92,7 @@ model System {
   documents Document[]
   assets    Asset[]
   devices   Device[]
+  racks     Rack[]
 
   @@map("systems")
 }
@@ -179,6 +181,22 @@ model DeviceLog {
 
   @@index([deviceId, timestamp])
   @@map("device_logs")
+}
+
+model Rack {
+  id          String   @id @default(cuid())
+  name        String
+  location    String?
+  height      Int      @default(42)
+  units       Json
+  systemId    String?
+  system      System?  @relation(fields: [systemId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("racks")
 }
 
 model AuditLog {

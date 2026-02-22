@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search as SearchIcon, Monitor, FileText, GitBranch, Package, X } from 'lucide-react'
+import { Search as SearchIcon, Monitor, FileText, GitBranch, Package, Server, X } from 'lucide-react'
 
 interface SearchResult {
-  type: 'system' | 'document' | 'diagram' | 'asset'
+  type: 'system' | 'document' | 'diagram' | 'asset' | 'rack'
   id: string
   title: string
   description?: string | null
@@ -21,6 +21,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   document: <FileText className="w-4 h-4" />,
   diagram: <GitBranch className="w-4 h-4" />,
   asset: <Package className="w-4 h-4" />,
+  rack: <Server className="w-4 h-4" />,
 }
 
 export function SearchForm() {
