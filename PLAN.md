@@ -12,7 +12,7 @@ Patchbay enables A/V teams to create detailed technical documentation and diagra
 
 **Hosting**: Self-hosted (on-premises)
 
-**Authentication**: SSO via Active Directory/LDAP
+**Authentication**: Local credentials (LDAP/AD deferred to future)
 
 ---
 
@@ -350,18 +350,15 @@ DATABASE_URL="postgresql://user:password@localhost:5432/patchbay?schema=public"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
 
-# LDAP / Active Directory
-LDAP_URL="ldap://dc.company.local:389"
-LDAP_BIND_DN="CN=svc_patchbay,OU=Service Accounts,DC=company,DC=local"
-LDAP_BIND_PASSWORD="secret"
-LDAP_BASE_DN="DC=company,DC=local"
-LDAP_SEARCH_FILTER="(sAMAccountName={username})"
-
-# Optional: LDAPS
-# LDAP_URL="ldaps://dc.company.local:636"
-
 # App
 NODE_ENV="development"
+
+# Future: LDAP / Active Directory
+# LDAP_URL="ldap://dc.company.local:389"
+# LDAP_BIND_DN="CN=svc_patchbay,OU=Service Accounts,DC=company,DC=local"
+# LDAP_BIND_PASSWORD="secret"
+# LDAP_BASE_DN="DC=company,DC=local"
+# LDAP_SEARCH_FILTER="(sAMAccountName={username})"
 ```
 
 ---
@@ -384,10 +381,6 @@ services:
       - DATABASE_URL=postgresql://patchbay:patchbay@db:5432/patchbay
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - LDAP_URL=${LDAP_URL}
-      - LDAP_BIND_DN=${LDAP_BIND_DN}
-      - LDAP_BIND_PASSWORD=${LDAP_BIND_PASSWORD}
-      - LDAP_BASE_DN=${LDAP_BASE_DN}
     depends_on:
       - db
     restart: unless-stopped
@@ -412,29 +405,30 @@ volumes:
 
 ## Phased Roadmap
 
-### Phase 1: MVP (4-6 weeks)
+### Phase 1: MVP (4-6 weeks) — ✅ COMPLETE
 
 **Goal**: Core documentation and basic diagramming
 
-- [ ] Project scaffold (Next.js, TypeScript, Tailwind, Prisma)
-- [ ] Docker setup for local development
-- [ ] Database schema & migrations
-- [ ] LDAP/Active Directory authentication via NextAuth.js
-- [ ] Dashboard layout with navigation
-- [ ] Systems CRUD (create, read, update, delete)
-- [ ] Documents (markdown editor for system documentation)
-- [ ] React Flow diagram editor
+- [x] Project scaffold (Next.js, TypeScript, Tailwind, Prisma)
+- [x] Docker setup for local development
+- [x] Database schema & migrations
+- [x] Local credentials authentication via NextAuth.js (LDAP/AD deferred)
+- [x] Dashboard layout with navigation
+- [x] Systems CRUD (create, read, update, delete)
+- [x] Documents (markdown editor for system documentation)
+- [x] React Flow diagram editor
   - Custom node types (video source, display, switcher, audio mixer, etc.)
   - Save/load diagrams to database
   - Basic node palette
-- [ ] Assets inventory (list view, CRUD)
-- [ ] Basic search functionality
+- [x] Assets inventory (list view, CRUD)
+- [x] Rack layout management
+- [x] Basic search functionality
 
-### Phase 2: Enhanced Documentation (3-4 weeks)
+### Phase 2: Enhanced Documentation (3-4 weeks) — 🔄 IN PROGRESS
 
 **Goal**: Richer diagramming and better UX
 
-- [ ] Excalidraw integration for freeform whiteboard diagrams
+- [x] Excalidraw integration for freeform whiteboard diagrams
 - [ ] Diagram templates (video rack, audio rack, network topology)
 - [ ] Improved node library with A/V-specific icons
 - [ ] Rich text editor for documents (TipTap or similar)
@@ -509,11 +503,11 @@ Custom nodes to create for signal flow diagrams:
 - Great DX with Prisma Studio for debugging
 - Works well with PostgreSQL
 
-### Why LDAP/AD via NextAuth?
-- Most corporate environments use Active Directory
-- NextAuth has built-in Credentials provider that can integrate with LDAP
-- Users don't need to remember another password
-- Group/role mapping possible for permissions
+### Why Local Credentials via NextAuth?
+- Simple to implement and manage for small teams
+- Users can be created/managed within the application
+- LDAP/AD integration possible later if needed
+- Group/role mapping available within app
 
 ### Why PostgreSQL over SQLite?
 - Better concurrency for multi-user access

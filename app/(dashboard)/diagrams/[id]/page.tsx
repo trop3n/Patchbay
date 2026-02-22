@@ -103,7 +103,10 @@ export default async function DiagramDetailPage({ params }: DiagramDetailPagePro
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Diagram</h2>
-        <DiagramViewer data={diagram.data as { nodes: unknown[]; edges: unknown[] }} />
+        <DiagramViewer
+          data={diagram.data as { nodes: unknown[]; edges: unknown[] }}
+          type={diagram.type as 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'}
+        />
       </div>
     </div>
   )

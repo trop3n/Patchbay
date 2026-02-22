@@ -11,12 +11,14 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { AVNode } from './av-node'
+import { ExcalidrawViewer } from './excalidraw-viewer'
 
 interface DiagramViewerProps {
   data: { nodes: unknown[]; edges: unknown[] }
+  type?: 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'
 }
 
-export function DiagramViewer({ data }: DiagramViewerProps) {
+export function DiagramViewer({ data, type }: DiagramViewerProps) {
   const nodeTypes = useMemo(() => ({ avNode: AVNode }), [])
 
   const nodes = useMemo(() => {
@@ -31,6 +33,10 @@ export function DiagramViewer({ data }: DiagramViewerProps) {
     if (!data?.edges) return []
     return data.edges as Edge[]
   }, [data?.edges])
+
+  if (type === 'WHITEBOARD') {
+    return <ExcalidrawViewer data={data} />
+  }
 
   if (!data?.nodes?.length) {
     return (

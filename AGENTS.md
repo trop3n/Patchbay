@@ -12,7 +12,7 @@ Patchbay is an A/V technical documentation and diagramming platform built with N
 npm install                  # Install dependencies
 npm run dev                  # Development server
 npm run build                # Build for production
-npm run lint                 # Lint code
+npm run lint                 # Lint code (ESLint)
 npm run typecheck            # Type check (or: npx tsc --noEmit)
 npm test                     # Run all tests
 npm test -- path/to/test.test.ts           # Run single test file
@@ -27,87 +27,96 @@ npx prisma studio            # Open database GUI
 
 ## Tech Stack
 
-Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5 (local credentials), Tailwind CSS + shadcn/ui, React Flow + Excalidraw, Zod, Jest + React Testing Library
+Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5, Tailwind CSS + shadcn/ui, React Flow (@xyflow/react), Excalidraw, Zod, Jest + React Testing Library
 
 ## Project Structure
 
 ```
 app/                    # Next.js App Router routes
-  (auth)/               # Auth route group (login, error)
-  (dashboard)/          # Protected routes (systems, diagrams, assets)
-  api/                  # API route handlers
+  (auth)/               # Auth route group
+  (dashboard)/          # Protected routes (systems, diagrams, assets, racks)
+  actions/              # Server actions
 components/
   ui/                   # shadcn/ui components
-  diagrams/             # React Flow and Excalidraw components
-  systems/              # System-related components
-  assets/               # Asset-related components
+  diagrams/             # React Flow diagram components
   layout/               # Shared layout components
 lib/
   auth.ts               # NextAuth configuration
   prisma.ts             # Prisma client singleton
   validations/          # Zod schemas
-  utils.ts              # Shared utilities
-prisma/
-  schema.prisma         # Database schema
-  seed.ts               # Database seeding
+prisma/schema.prisma    # Database schema
 types/                  # Shared TypeScript types
 ```
 
 ## Code Style Guidelines
+
+### Directives
+
+Place `'use client'` or `'use server'` as the first line before any imports.
 
 ### Imports
 
 Order: React/Next.js → Third-party (alphabetical) → `@/` imports (alphabetical) → Relative → Type imports
 
 ```typescript
+'use client'
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { z } from 'zod'
-import { useSession } from 'next-auth/react'
+import { signOut } from 'next-auth/react'
 
 import { Button } from '@/components/ui/button'
 import { prisma } from '@/lib/prisma'
 
-import type { System } from '@/types'
+import type { AuthUser } from '@/types'
 ```
 
 ### Formatting
 
-- 2-space indentation, single quotes, semicolons
-- No trailing commas in imports, trailing commas in multiline arrays/objects
-- Max line length: 100 characters
+2-space indentation, single quotes, semicolons. No trailing commas in imports; trailing commas in multiline arrays/objects. Max line length: 100 characters.
 
-### Types
+### React Components
 
-- Explicit return types for functions
-- `interface` for extensible object types, `type` for unions/utilities
-- Avoid `any`; use `unknown` when type is truly unknown
-- Define shared types in `types/index.ts`
-
-### Naming Conventions
-
-- **Components**: PascalCase (`SystemCard.tsx`, `export function SystemCard()`)
-- **Utilities**: camelCase (`formatDate.ts`)
-- **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRY_COUNT`)
-- **Database models**: PascalCase (`System`, `Diagram`)
-- **API routes**: kebab-case (`/api/systems/[id]/route.ts`)
-- **Environment variables**: SCREAMING_SNAKE_CASE (`DATABASE_URL`, `NEXTAUTH_SECRET`)
-
-### Error Handling
-
-- Use `Result` pattern in server actions: `{ success: true, data }` or `{ error: string }`
-- Validate input with Zod before processing
-- Log errors server-side with context
+Function declarations (NOT arrow functions). `export default` only for page components; named exports for reusable components. Interface for props: `ComponentNameProps`.
 
 ```typescript
-export async function createSystem(formData: FormData) {
-  const validated = systemSchema.safeParse({ name: formData.get('name') })
+interface HeaderProps {
+  user: AuthUser
+}
+
+export function Header({ user }: HeaderProps) { /* ... */ }
+
+export default function NewSystemPage() { /* ... */ }
+```
+
+### Server Actions
+
+Place in `app/actions/`. Start with `'use server'`. Check auth first, throw `Error('Unauthorized')` if missing. Return `{ success: true, data }` or `{ error: string }` for mutations.
+
+```typescript
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
+import { systemSchema } from '@/lib/validations/system'
+
+export async function createSystem(data: SystemInput) {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  const validated = systemSchema.safeParse(data)
   if (!validated.success) {
     return { error: 'Invalid input', issues: validated.error.issues }
   }
+
   try {
-    const system = await prisma.system.create({ data: validated.data })
+    const system = await prisma.system.create({
+      data: { ...validated.data, createdById: session.user.id },
+    })
+    revalidatePath('/systems')
     return { success: true, system }
   } catch (error) {
     console.error('Failed to create system:', error)
@@ -116,41 +125,38 @@ export async function createSystem(formData: FormData) {
 }
 ```
 
-### React Components
+### Types
 
-- Function components with arrow functions
-- `export default` only for page components
-- Keep components < 200 lines, extract complex logic to hooks
+Interface for component props and extensible object types. Type for unions and utilities. Avoid `any`; use `unknown` when truly unknown. Re-export Prisma types from `types/index.ts`.
 
-### Server vs Client Components
+### Naming Conventions
 
-- Default to Server Components
-- Use `"use client"` only when needed: hooks, browser APIs, event handlers
+- **Components**: PascalCase files (`SystemCard.tsx`), `export function SystemCard()`
+- **Server actions**: camelCase files (`systems.ts`), camelCase functions (`getSystems`)
+- **Utilities**: camelCase (`formatDate.ts`)
+- **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRY_COUNT`)
+- **Prisma models**: PascalCase (`System`, `Diagram`)
+- **Environment variables**: SCREAMING_SNAKE_CASE (`DATABASE_URL`)
 
 ### Database Operations
 
-- Use Prisma client from `@/lib/prisma`
-- Use transactions for related operations
-- Select only needed fields
+Import Prisma client from `@/lib/prisma`. Use `select` to limit fields, `include` for relations. Use transactions for related operations.
+
+### Server vs Client Components
+
+Default to Server Components. Use `'use client'` only when needed: hooks, browser APIs, event handlers.
 
 ### Testing
 
-- Co-locate tests (`Component.test.tsx`)
-- AAA pattern: Arrange, Act, Assert
-- Descriptive test names
+Co-locate tests with source files (`Component.test.tsx`). Use AAA pattern: Arrange, Act, Assert.
 
 ## Git Commit Messages
 
-Use conventional commits format, keep first line under 72 characters:
-
-```
-feat(diagrams): add signal flow node palette
-fix(auth): handle invalid credentials
-```
+Use conventional commits: `feat(diagrams): add signal flow node palette`
 
 ## Security
 
 - Never commit `.env` files or secrets
-- Validate all input with Zod
-- Use parameterized queries (Prisma handles this)
-- Sanitize HTML before rendering user content
+- Validate all input with Zod schemas
+- Always check `await auth()` in server actions before data access
+- Restrict destructive operations to ADMIN/EDITOR roles

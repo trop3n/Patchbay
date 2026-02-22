@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DiagramEditor } from '@/components/diagrams/diagram-editor'
+import { ExcalidrawEditor } from '@/components/diagrams/excalidraw-editor'
 import { createDiagram } from '@/app/actions/diagrams'
 import type { System } from '@prisma/client'
 import type { NodeType } from '@/components/diagrams/node-types'
@@ -52,13 +53,17 @@ const nodeIcons: Record<NodeType, string> = {
   label: '🏷️',
 }
 
+type DiagramTypeValue = 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'
+
 export function DiagramForm({ systems, systemId }: DiagramFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(systemId || null)
+  const [diagramType, setDiagramType] = useState<DiagramTypeValue>('SIGNAL_FLOW')
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
+  const [excalidrawData, setExcalidrawData] = useState<unknown>(null)
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -95,16 +100,21 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
     setError(null)
 
     const formData = new FormData(event.currentTarget)
+    const type = formData.get('type') as DiagramTypeValue
+
+    const data = type === 'WHITEBOARD'
+      ? excalidrawData
+      : {
+          nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
+          edges,
+        }
 
     const result = await createDiagram({
       title: formData.get('title') as string,
       description: formData.get('description') as string || undefined,
-      type: (formData.get('type') as 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT') || 'SIGNAL_FLOW',
+      type,
       systemId: selectedSystemId || undefined,
-      data: {
-        nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
-        edges,
-      },
+      data,
     })
 
     if (result.success && result.diagram) {
@@ -119,7 +129,7 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
     <Card className="max-w-5xl">
       <CardHeader>
         <CardTitle>New Diagram</CardTitle>
-        <CardDescription>Create a signal flow or network diagram</CardDescription>
+        <CardDescription>Create a signal flow, network, or whiteboard diagram</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-6">
@@ -130,7 +140,11 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select name="type" defaultValue="SIGNAL_FLOW">
+              <Select
+                name="type"
+                defaultValue="SIGNAL_FLOW"
+                onValueChange={(v) => setDiagramType(v as DiagramTypeValue)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -176,14 +190,21 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
 
           <div className="space-y-2">
             <Label>Diagram Editor</Label>
-            <DiagramEditor
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onAddNode={handleAddNode}
-            />
+            {diagramType === 'WHITEBOARD' ? (
+              <ExcalidrawEditor
+                data={null}
+                onChange={setExcalidrawData}
+              />
+            ) : (
+              <DiagramEditor
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onAddNode={handleAddNode}
+              />
+            )}
           </div>
 
           {error && (

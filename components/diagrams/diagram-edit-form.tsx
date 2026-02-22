@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DiagramEditor } from '@/components/diagrams/diagram-editor'
+import { ExcalidrawEditor } from '@/components/diagrams/excalidraw-editor'
 import { updateDiagram } from '@/app/actions/diagrams'
 import type { Diagram, System } from '@prisma/client'
 import type { NodeType } from '@/components/diagrams/node-types'
@@ -52,21 +53,29 @@ const nodeIcons: Record<NodeType, string> = {
   label: '🏷️',
 }
 
+type DiagramTypeValue = 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'
+
 export function DiagramEditForm({ diagram, systems }: DiagramEditFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(diagram.systemId || null)
+  const [diagramType, setDiagramType] = useState<DiagramTypeValue>(diagram.type as DiagramTypeValue)
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
+  const [excalidrawData, setExcalidrawData] = useState<unknown>(null)
 
   useEffect(() => {
-    const diagramData = diagram.data as { nodes?: Node[]; edges?: Edge[] }
-    if (diagramData?.nodes) {
-      setNodes(diagramData.nodes.map((n) => ({ ...n, type: 'avNode' })))
-    }
-    if (diagramData?.edges) {
-      setEdges(diagramData.edges)
+    if (diagram.type === 'WHITEBOARD') {
+      setExcalidrawData(diagram.data)
+    } else {
+      const diagramData = diagram.data as { nodes?: Node[]; edges?: Edge[] }
+      if (diagramData?.nodes) {
+        setNodes(diagramData.nodes.map((n) => ({ ...n, type: 'avNode' })))
+      }
+      if (diagramData?.edges) {
+        setEdges(diagramData.edges)
+      }
     }
   }, [diagram])
 
@@ -105,16 +114,21 @@ export function DiagramEditForm({ diagram, systems }: DiagramEditFormProps) {
     setError(null)
 
     const formData = new FormData(event.currentTarget)
+    const type = formData.get('type') as DiagramTypeValue
+
+    const data = type === 'WHITEBOARD'
+      ? excalidrawData
+      : {
+          nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
+          edges,
+        }
 
     const result = await updateDiagram(diagram.id, {
       title: formData.get('title') as string,
       description: formData.get('description') as string || undefined,
-      type: formData.get('type') as 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT',
+      type,
       systemId: selectedSystemId,
-      data: {
-        nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
-        edges,
-      },
+      data,
     })
 
     if (result.success) {
@@ -146,7 +160,11 @@ export function DiagramEditForm({ diagram, systems }: DiagramEditFormProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select name="type" defaultValue={diagram.type}>
+              <Select
+                name="type"
+                defaultValue={diagram.type}
+                onValueChange={(v) => setDiagramType(v as DiagramTypeValue)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -193,14 +211,21 @@ export function DiagramEditForm({ diagram, systems }: DiagramEditFormProps) {
 
           <div className="space-y-2">
             <Label>Diagram Editor</Label>
-            <DiagramEditor
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onAddNode={handleAddNode}
-            />
+            {diagramType === 'WHITEBOARD' ? (
+              <ExcalidrawEditor
+                data={excalidrawData}
+                onChange={setExcalidrawData}
+              />
+            ) : (
+              <DiagramEditor
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onAddNode={handleAddNode}
+              />
+            )}
           </div>
 
           {error && (
