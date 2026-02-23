@@ -28,6 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DiagramEditor } from '@/components/diagrams/diagram-editor'
 import { ExcalidrawEditor } from '@/components/diagrams/excalidraw-editor'
 import { createDiagram } from '@/app/actions/diagrams'
+import { diagramTemplates } from '@/lib/diagram-templates'
 import type { System } from '@prisma/client'
 import type { NodeType } from '@/components/diagrams/node-types'
 
@@ -61,6 +62,7 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(systemId || null)
   const [diagramType, setDiagramType] = useState<DiagramTypeValue>('SIGNAL_FLOW')
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const [excalidrawData, setExcalidrawData] = useState<unknown>(null)
@@ -93,6 +95,25 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
     }
     setNodes((nds) => [...nds, newNode])
   }, [])
+
+  const handleTemplateChange = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId)
+    if (!templateId) {
+      setNodes([])
+      setEdges([])
+      return
+    }
+    const template = diagramTemplates.find((t) => t.id === templateId)
+    if (template) {
+      setNodes(template.nodes)
+      setEdges(template.edges)
+      setDiagramType(template.type)
+    }
+  }, [])
+
+  const filteredTemplates = diagramTemplates.filter(
+    (t) => t.type === diagramType || diagramType === 'WHITEBOARD'
+  )
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -143,7 +164,18 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
               <Select
                 name="type"
                 defaultValue="SIGNAL_FLOW"
-                onValueChange={(v) => setDiagramType(v as DiagramTypeValue)}
+                onValueChange={(v) => {
+                  const newType = v as DiagramTypeValue
+                  setDiagramType(newType)
+                  if (selectedTemplate) {
+                    const template = diagramTemplates.find((t) => t.id === selectedTemplate)
+                    if (template && template.type !== newType) {
+                      setSelectedTemplate('')
+                      setNodes([])
+                      setEdges([])
+                    }
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -178,15 +210,39 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              placeholder="Describe this diagram..."
-              rows={2}
-            />
-          </div>
+<div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Describe this diagram..."
+                rows={2}
+              />
+            </div>
+
+            {diagramType !== 'WHITEBOARD' && (
+              <div className="space-y-2">
+                <Label htmlFor="template">Start from Template</Label>
+                <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a template (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Blank Canvas</SelectItem>
+                    {filteredTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTemplate && (
+                  <p className="text-xs text-muted-foreground">
+                    {diagramTemplates.find((t) => t.id === selectedTemplate)?.description}
+                  </p>
+                )}
+              </div>
+            )}
 
           <div className="space-y-2">
             <Label>Diagram Editor</Label>
