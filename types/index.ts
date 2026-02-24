@@ -1,7 +1,7 @@
 import { type System, SystemStatus } from '@prisma/client'
 import { type Diagram, DiagramType } from '@prisma/client'
 import { type Asset, AssetStatus } from '@prisma/client'
-import { type Document } from '@prisma/client'
+import { type Document, ContentType } from '@prisma/client'
 import { type User, Role } from '@prisma/client'
 import { type Device, DeviceStatus } from '@prisma/client'
 import { type DeviceLog, LogLevel } from '@prisma/client'
@@ -18,7 +18,7 @@ export type {
   AuditLog,
 }
 
-export { SystemStatus, DiagramType, AssetStatus, DeviceStatus, Role, LogLevel }
+export { SystemStatus, DiagramType, AssetStatus, ContentType, DeviceStatus, Role, LogLevel }
 
 export type SystemWithRelations = System & {
   diagrams: Diagram[]

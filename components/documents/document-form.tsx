@@ -13,20 +13,28 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MarkdownEditor } from '@/components/documents/markdown-editor'
+import { DocumentEditor } from '@/components/documents/document-editor'
 import { createDocument } from '@/app/actions/documents'
 import type { System } from '@prisma/client'
+import type { ContentTypeValue } from '@/lib/validations/document'
 
 interface DocumentFormProps {
   systems: Pick<System, 'id' | 'name'>[]
   systemId?: string
 }
 
+const contentTypeOptions: { value: ContentTypeValue; label: string }[] = [
+  { value: 'RICH_TEXT', label: 'Rich Text' },
+  { value: 'MARKDOWN', label: 'Markdown' },
+  { value: 'PLAIN_TEXT', label: 'Plain Text' },
+]
+
 export function DocumentForm({ systems, systemId }: DocumentFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [content, setContent] = useState('')
+  const [contentType, setContentType] = useState<ContentTypeValue>('MARKDOWN')
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(systemId || null)
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -35,10 +43,11 @@ export function DocumentForm({ systems, systemId }: DocumentFormProps) {
     setError(null)
 
     const formData = new FormData(event.currentTarget)
-    
+
     const result = await createDocument({
       title: formData.get('title') as string,
       content,
+      contentType,
       systemId: selectedSystemId || undefined,
     })
 
@@ -54,26 +63,49 @@ export function DocumentForm({ systems, systemId }: DocumentFormProps) {
     <Card className="max-w-4xl">
       <CardHeader>
         <CardTitle>New Document</CardTitle>
-        <CardDescription>Create a markdown document for system documentation</CardDescription>
+        <CardDescription>Create a document for system documentation</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input id="title" name="title" required placeholder="System Overview" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input id="title" name="title" required placeholder="System Overview" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contentType">Content Type</Label>
+              <Select
+                value={contentType}
+                onValueChange={(v) => {
+                  setContentType(v as ContentTypeValue)
+                  setContent('')
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {contentTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="system">Associated System</Label>
-            <Select 
-              value={selectedSystemId || ''} 
-              onValueChange={(v) => setSelectedSystemId(v || null)}
+            <Select
+              value={selectedSystemId || '__none__'}
+              onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a system (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="__none__">None</SelectItem>
                 {systems.map((system) => (
                   <SelectItem key={system.id} value={system.id}>
                     {system.name}
@@ -85,18 +117,10 @@ export function DocumentForm({ systems, systemId }: DocumentFormProps) {
 
           <div className="space-y-2">
             <Label>Content *</Label>
-            <MarkdownEditor
+            <DocumentEditor
               value={content}
               onChange={setContent}
-              placeholder="# Document Title
-
-Write your documentation in markdown...
-
-## Features
-- **Bold** and *italic* text
-- Lists and checkboxes
-- Code blocks
-- Tables"
+              contentType={contentType}
             />
           </div>
 

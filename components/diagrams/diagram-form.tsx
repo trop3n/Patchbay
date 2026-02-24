@@ -175,14 +175,14 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
           <div className="space-y-2">
             <Label htmlFor="system">Associated System</Label>
             <Select
-              value={selectedSystemId || ''}
-              onValueChange={(v) => setSelectedSystemId(v || null)}
+              value={selectedSystemId || '__none__'}
+              onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a system (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="__none__">None</SelectItem>
                 {systems.map((system) => (
                   <SelectItem key={system.id} value={system.id}>
                     {system.name}
@@ -205,12 +205,12 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
             {diagramType !== 'WHITEBOARD' && (
               <div className="space-y-2">
                 <Label htmlFor="template">Start from Template</Label>
-                <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                <Select value={selectedTemplate || '__blank__'} onValueChange={(v) => handleTemplateChange(v === '__blank__' ? '' : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a template (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Blank Canvas</SelectItem>
+                    <SelectItem value="__blank__">Blank Canvas</SelectItem>
                     {filteredTemplates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.name}

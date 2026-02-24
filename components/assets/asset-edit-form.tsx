@@ -150,14 +150,14 @@ export function AssetEditForm({ asset, systems }: AssetEditFormProps) {
           <div className="space-y-2">
             <Label htmlFor="system">Associated System</Label>
             <Select
-              value={selectedSystemId || ''}
-              onValueChange={(v) => setSelectedSystemId(v || null)}
+              value={selectedSystemId || '__none__'}
+              onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a system (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="__none__">None</SelectItem>
                 {systems.map((system) => (
                   <SelectItem key={system.id} value={system.id}>
                     {system.name}

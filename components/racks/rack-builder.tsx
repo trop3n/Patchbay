@@ -215,12 +215,12 @@ export function RackBuilder({ height, units, onHeightChange, onUnitsChange, asse
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Link to Asset (optional)</Label>
-            <Select value={selectedAsset} onValueChange={setSelectedAsset}>
+            <Select value={selectedAsset || '__none__'} onValueChange={(v) => setSelectedAsset(v === '__none__' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select an asset" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None (manual entry)</SelectItem>
+                <SelectItem value="__none__">None (manual entry)</SelectItem>
                 {assets.map((asset) => (
                   <SelectItem key={asset.id} value={asset.id}>
                     {asset.name} {asset.manufacturer && `(${asset.manufacturer})`}

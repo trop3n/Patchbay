@@ -52,6 +52,12 @@ enum LogLevel {
   CRITICAL
 }
 
+enum ContentType {
+  RICH_TEXT
+  MARKDOWN
+  PLAIN_TEXT
+}
+
 model User {
   id          String     @id @default(cuid())
   email       String     @unique
@@ -115,15 +121,16 @@ model Diagram {
 }
 
 model Document {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
-  content     String   @db.Text
+  content     String      @db.Text
+  contentType ContentType @default(MARKDOWN)
   systemId    String?
-  system      System?  @relation(fields: [systemId], references: [id])
+  system      System?     @relation(fields: [systemId], references: [id])
   createdById String
-  createdBy   User     @relation(fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@map("documents")
 }

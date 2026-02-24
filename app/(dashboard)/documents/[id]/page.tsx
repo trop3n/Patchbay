@@ -1,16 +1,23 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { getDocument } from '@/app/actions/documents'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Edit, Calendar, User, Folder } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Edit, Calendar, User, Folder, FileText } from 'lucide-react'
 import { DeleteDocumentButton } from '@/components/documents/delete-document-button'
+import { DocumentViewer } from '@/components/documents/document-viewer'
+import type { ContentType } from '@prisma/client'
 
 interface DocumentDetailPageProps {
   params: Promise<{ id: string }>
+}
+
+const contentTypeLabels: Record<ContentType, string> = {
+  RICH_TEXT: 'Rich Text',
+  MARKDOWN: 'Markdown',
+  PLAIN_TEXT: 'Plain Text',
 }
 
 export default async function DocumentDetailPage({ params }: DocumentDetailPageProps) {
@@ -20,6 +27,8 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
   if (!document) {
     notFound()
   }
+
+  const contentType = (document.contentType as ContentType) || 'MARKDOWN'
 
   return (
     <div className="space-y-6">
@@ -34,7 +43,10 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{document.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">{document.title}</h1>
+            <Badge variant="secondary">{contentTypeLabels[contentType]}</Badge>
+          </div>
           {document.system && (
             <p className="text-muted-foreground flex items-center gap-2 mt-1">
               <Folder className="w-4 h-4" />
@@ -87,13 +99,7 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
 
       <Separator />
 
-      <Card>
-        <CardContent className="prose prose-sm dark:prose-invert max-w-none pt-6">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {document.content}
-          </ReactMarkdown>
-        </CardContent>
-      </Card>
+      <DocumentViewer content={document.content} contentType={contentType} />
     </div>
   )
 }
