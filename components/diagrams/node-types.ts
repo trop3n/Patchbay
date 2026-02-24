@@ -1,6 +1,5 @@
 import {
   Monitor,
-  MonitorPlay,
   Video,
   Camera,
   Tv,
@@ -20,7 +19,6 @@ import {
   Radio,
   TabletSmartphone,
   Gamepad2,
-  Settings,
   SlidersHorizontal,
   Cable,
   Plug,
@@ -29,11 +27,8 @@ import {
   Type,
   PanelTop,
   Spline,
-  Waves,
   Disc,
   Usb,
-  Clapperboard,
-  Film,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 

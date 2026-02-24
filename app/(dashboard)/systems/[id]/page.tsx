@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Edit, MapPin, Calendar, User } from 'lucide-react'
 import { DeleteSystemButton } from '@/components/systems/delete-system-button'
+import { SystemAttachments } from '@/components/attachments'
 
 const statusColors: Record<string, string> = {
   OPERATIONAL: 'bg-green-500',
@@ -167,6 +168,13 @@ export default async function SystemDetailPage({ params }: SystemDetailPageProps
           </div>
         </>
       )}
+
+      <Separator />
+      <SystemAttachments
+        systemId={system.id}
+        initialAttachments={system.attachments}
+        canDelete={true}
+      />
     </div>
   )
 }

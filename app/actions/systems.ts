@@ -40,6 +40,10 @@ export async function getSystem(id: string) {
       devices: {
         orderBy: { name: 'asc' },
       },
+      attachments: {
+        orderBy: { createdAt: 'desc' },
+        include: { createdBy: { select: { name: true, username: true } } },
+      },
     },
   })
 }

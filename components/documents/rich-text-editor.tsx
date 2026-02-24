@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useEffect, useState } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -52,14 +52,14 @@ function ToolbarButton({
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const isInitialMount = useRef(true)
 
   useEffect(() => {
-    if (editorRef.current && !isInitialized) {
+    if (editorRef.current && isInitialMount.current) {
       editorRef.current.innerHTML = value
-      setIsInitialized(true)
+      isInitialMount.current = false
     }
-  }, [value, isInitialized])
+  }, [value])
 
   const execCommand = useCallback((command: string, cmdValue?: string) => {
     document.execCommand(command, false, cmdValue)

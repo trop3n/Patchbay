@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Edit, Calendar, User, Folder, FileText } from 'lucide-react'
+import { ArrowLeft, Edit, Calendar, User, Folder } from 'lucide-react'
 import { DeleteDocumentButton } from '@/components/documents/delete-document-button'
 import { DocumentViewer } from '@/components/documents/document-viewer'
+import { DocumentAttachments } from '@/components/attachments'
 import type { ContentType } from '@prisma/client'
 
 interface DocumentDetailPageProps {
@@ -100,6 +101,13 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
       <Separator />
 
       <DocumentViewer content={document.content} contentType={contentType} />
+
+      <Separator />
+      <DocumentAttachments
+        documentId={document.id}
+        initialAttachments={document.attachments}
+        canDelete={true}
+      />
     </div>
   )
 }

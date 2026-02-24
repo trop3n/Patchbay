@@ -4,7 +4,6 @@ import { memo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { cn } from '@/lib/utils'
 import { nodeColors, getNodeTypeConfig } from './node-types'
-import type { LucideIcon } from 'lucide-react'
 
 interface AVNodeData {
   label: string

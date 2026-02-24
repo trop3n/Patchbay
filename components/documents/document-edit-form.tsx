@@ -15,7 +15,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DocumentEditor } from '@/components/documents/document-editor'
 import { updateDocument } from '@/app/actions/documents'
-import type { Document, System, ContentType } from '@prisma/client'
+import type { Document, System } from '@prisma/client'
 import type { ContentTypeValue } from '@/lib/validations/document'
 
 interface DocumentEditFormProps {

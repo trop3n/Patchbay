@@ -2,10 +2,6 @@
 
 Guidelines for AI coding agents working on Patchbay.
 
-## Project Overview
-
-Patchbay is an A/V technical documentation and diagramming platform built with Next.js 14 (App Router), TypeScript, Prisma, and PostgreSQL.
-
 ## Build/Lint/Test Commands
 
 ```bash
@@ -17,11 +13,9 @@ npm run typecheck            # Type check (tsc --noEmit)
 npm test                     # Run all tests
 npm test -- path/to/test.test.ts           # Run single test file
 npm test -- --testNamePattern="test name"  # Run tests by name pattern
-npm run test:watch           # Run tests in watch mode
 
 npx prisma generate          # Generate Prisma client
 npx prisma migrate dev       # Run migrations (development)
-npx prisma migrate deploy    # Run migrations (production)
 npx prisma db seed           # Seed database
 npx prisma studio            # Open database GUI
 
@@ -29,18 +23,15 @@ npm run docker:dev           # Start dev Docker environment
 npm run docker:dev:down      # Stop dev Docker environment
 ```
 
-## Tech Stack
+## Tech Stack & Structure
 
 Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5, Tailwind CSS + shadcn/ui, React Flow (@xyflow/react), Excalidraw, Zod, Jest + React Testing Library
-
-## Project Structure
 
 ```
 app/
   (auth)/               # Auth routes (login, error)
   (dashboard)/          # Protected routes (systems, diagrams, assets, racks, documents)
-  actions/              # Server actions
-  api/auth/             # NextAuth API routes
+  actions/              # Server actions (systems.ts, diagrams.ts, etc.)
 components/
   ui/                   # shadcn/ui components
   diagrams/             # React Flow and Excalidraw components
@@ -48,17 +39,20 @@ components/
 lib/
   auth.ts               # NextAuth configuration
   prisma.ts             # Prisma client singleton
-  utils.ts              # Utility functions (cn, etc.)
+  utils.ts              # Utility functions (cn)
   validations/          # Zod schemas
 prisma/schema.prisma    # Database schema
 types/index.ts          # Shared TypeScript types
 ```
 
-## Code Style Guidelines
+Prisma models: User, System, Diagram, Document, Asset, Device, DeviceLog, Rack, AuditLog
+Enums: Role (ADMIN/EDITOR/VIEWER), SystemStatus, DiagramType, AssetStatus, DeviceStatus, ContentType, LogLevel
 
-### Directives & Imports
+## Code Style
 
-Place `'use client'` or `'use server'` as the first line. Import order: React/Next.js → Third-party (alphabetical) → `@/` imports (alphabetical) → Type imports.
+### Imports & Directives
+
+Place `'use client'` or `'use server'` as the first line. Import order: React/Next.js → Third-party → `@/` imports → Type imports. Separate groups with blank lines.
 
 ```typescript
 'use client'
@@ -66,36 +60,25 @@ Place `'use client'` or `'use server'` as the first line. Import order: React/Ne
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { signIn } from 'next-auth/react'
-
 import { Button } from '@/components/ui/button'
 import { createSystem } from '@/app/actions/systems'
 
 import type { AuthUser } from '@/types'
 ```
 
-### Formatting
+### Formatting & Naming
 
-2-space indentation, single quotes, semicolons. No trailing commas in imports; trailing commas in multiline arrays/objects. Max line length: 100 characters.
+- 2-space indentation, single quotes, semicolons
+- No trailing commas in imports; trailing commas in multiline arrays/objects
+- Components: PascalCase files (`SystemCard.tsx`), `export function SystemCard()`
+- Server actions: camelCase files (`systems.ts`), camelCase functions (`getSystems`)
+- Constants: SCREAMING_SNAKE_CASE (`statusOptions`)
+- Interface for props/extensible objects; Type for unions/Prisma-derived types
+- Avoid `any`; use `unknown` when truly unknown
 
 ### React Components
 
-Function declarations (NOT arrow functions). `export default` only for page components; named exports for reusable components.
-
-```typescript
-interface HeaderProps {
-  user: AuthUser
-}
-
-export function Header({ user }: HeaderProps) {
-  const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
-}
-
-export default function NewSystemPage() {
-  return <SystemForm />
-}
-```
+Function declarations (NOT arrow functions). `export default` only for page components; named exports for reusable components. Define interfaces for props above component.
 
 ### Server Actions
 
@@ -131,20 +114,10 @@ export async function createSystem(data: SystemInput) {
 }
 ```
 
-### Types & Naming
-
-- Interface for props/extensible objects; Type for unions/Prisma-derived types
-- Avoid `any`; use `unknown` when truly unknown
-- Components: PascalCase files (`SystemCard.tsx`), `export function SystemCard()`
-- Server actions: camelCase files (`systems.ts`), camelCase functions (`getSystems`)
-- Constants: SCREAMING_SNAKE_CASE (`statusOptions`)
-- Prisma models: PascalCase (`System`); Database tables: snake_case via `@@map` (`systems`)
-
 ### Error Handling
 
 - Server actions: return `{ error: string }` or `{ error: string, issues: ZodIssue[] }`
 - Client: `useState<string | null>` with `text-destructive` class
-- Auth: `throw new Error('Unauthorized')`
 - Prisma: wrap in try/catch, log with `console.error()`
 
 ### Database Operations
@@ -165,19 +138,21 @@ return prisma.system.findMany({
 
 Use FormData API. Extract with `formData.get('name') as string`.
 
-```typescript
-async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-  event.preventDefault()
-  const formData = new FormData(event.currentTarget)
-  const result = await createSystem({ name: formData.get('name') as string })
-  if (result.success) router.push(`/systems/${result.system.id}`)
-  else setError(result.error || 'Failed')
-}
-```
+### Authentication
 
-### Testing
+- Server-side: `import { auth } from '@/lib/auth'`
+- Client-side: `import { signIn, signOut } from 'next-auth/react'`
+- Session user: `id`, `email`, `name`, `username`, `role` (ADMIN/EDITOR/VIEWER)
+- Restrict delete operations: `if (session.user.role !== 'ADMIN' && session.user.role !== 'EDITOR')`
 
-Co-locate tests with source (`Component.test.tsx`). Jest + React Testing Library with AAA pattern.
+### UI Components
+
+Use shadcn/ui from `@/components/ui/`. Common: Button, Input, Label, Textarea, Select, Dialog, Card, Badge, Table, Tabs, Avatar, DropdownMenu, ScrollArea, Separator, Sheet.
+
+### Diagram Components
+
+- React Flow: `@/components/diagrams/diagram-editor.tsx`, `av-node.tsx`
+- Excalidraw: `@/components/diagrams/excalidraw-editor.tsx`, `excalidraw-viewer.tsx`
 
 ## Git Commits
 
@@ -188,4 +163,4 @@ Conventional commits: `feat(diagrams): add signal flow`, `fix(auth): handle time
 - Never commit `.env` files or secrets
 - Validate all input with Zod schemas in `lib/validations/`
 - Always `await auth()` in server actions before data access
-- Restrict delete operations to ADMIN/EDITOR roles via `session.user.role`
+- Restrict delete operations to ADMIN/EDITOR roles

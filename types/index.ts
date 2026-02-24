@@ -6,6 +6,7 @@ import { type User, Role } from '@prisma/client'
 import { type Device, DeviceStatus } from '@prisma/client'
 import { type DeviceLog, LogLevel } from '@prisma/client'
 import { type AuditLog } from '@prisma/client'
+import { type Attachment } from '@prisma/client'
 
 export type {
   System,
@@ -16,6 +17,7 @@ export type {
   Device,
   DeviceLog,
   AuditLog,
+  Attachment,
 }
 
 export { SystemStatus, DiagramType, AssetStatus, ContentType, DeviceStatus, Role, LogLevel }

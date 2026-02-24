@@ -28,6 +28,10 @@ export async function getDocument(id: string) {
     include: {
       system: { select: { id: true, name: true, slug: true } },
       createdBy: { select: { name: true, username: true, email: true } },
+      attachments: {
+        orderBy: { createdAt: 'desc' },
+        include: { createdBy: { select: { name: true, username: true } } },
+      },
     },
   })
 }
