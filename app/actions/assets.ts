@@ -20,6 +20,66 @@ export async function getAssets(systemId?: string) {
   })
 }
 
+export interface AssetFilters {
+  search?: string
+  status?: AssetStatus
+  systemId?: string
+}
+
+export async function getFilteredAssets(filters: AssetFilters) {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  const where: {
+    OR?: Array<
+      { name: { contains: string; mode: 'insensitive' } } |
+      { serialNumber: { contains: string; mode: 'insensitive' } } |
+      { model: { contains: string; mode: 'insensitive' } } |
+      { manufacturer: { contains: string; mode: 'insensitive' } }
+    >
+    status?: AssetStatus
+    systemId?: string
+  } = {}
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: 'insensitive' } },
+      { serialNumber: { contains: filters.search, mode: 'insensitive' } },
+      { model: { contains: filters.search, mode: 'insensitive' } },
+      { manufacturer: { contains: filters.search, mode: 'insensitive' } },
+    ]
+  }
+
+  if (filters.status) {
+    where.status = filters.status
+  }
+
+  if (filters.systemId) {
+    where.systemId = filters.systemId
+  }
+
+  return prisma.asset.findMany({
+    where,
+    orderBy: { name: 'asc' },
+    include: {
+      system: { select: { name: true, slug: true } },
+      createdBy: { select: { name: true, username: true } },
+    },
+  })
+}
+
+export async function getAssetFilterOptions() {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  const systems = await prisma.system.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+
+  return { systems }
+}
+
 export async function getAsset(id: string) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')

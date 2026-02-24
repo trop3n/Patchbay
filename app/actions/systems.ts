@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { systemSchema, type SystemInput } from '@/lib/validations/system'
+import type { SystemStatus } from '@prisma/client'
 
 export async function getSystems() {
   const session = await auth()
@@ -16,6 +17,63 @@ export async function getSystems() {
       _count: { select: { diagrams: true, assets: true, devices: true } },
     },
   })
+}
+
+export interface SystemFilters {
+  search?: string
+  status?: SystemStatus
+  category?: string
+}
+
+export async function getFilteredSystems(filters: SystemFilters) {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  const where: {
+    OR?: Array<{ name: { contains: string; mode: 'insensitive' } } | { description: { contains: string; mode: 'insensitive' } } | { location: { contains: string; mode: 'insensitive' } }>
+    status?: SystemStatus
+    category?: string
+  } = {}
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: 'insensitive' } },
+      { description: { contains: filters.search, mode: 'insensitive' } },
+      { location: { contains: filters.search, mode: 'insensitive' } },
+    ]
+  }
+
+  if (filters.status) {
+    where.status = filters.status
+  }
+
+  if (filters.category) {
+    where.category = filters.category
+  }
+
+  return prisma.system.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      createdBy: { select: { name: true, username: true } },
+      _count: { select: { diagrams: true, assets: true, devices: true } },
+    },
+  })
+}
+
+export async function getSystemFilterOptions() {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  const categories = await prisma.system.findMany({
+    where: { category: { not: null } },
+    select: { category: true },
+    distinct: ['category'],
+  })
+
+  return {
+    categories: categories.map((s) => s.category).filter(Boolean) as string[],
+  }
 }
 
 export async function getSystem(id: string) {

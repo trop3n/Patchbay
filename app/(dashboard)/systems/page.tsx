@@ -1,19 +1,34 @@
-import { prisma } from '@/lib/prisma'
+import { Suspense } from 'react'
+import { getFilteredSystems, getSystemFilterOptions, type SystemFilters } from '@/app/actions/systems'
 import { SystemList } from '@/components/systems/system-list'
+import { SystemListFilter } from '@/components/systems/system-list-filter'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function SystemsPage() {
-  const systems = await prisma.system.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      createdBy: { select: { name: true, username: true } },
-      _count: { select: { diagrams: true, assets: true, devices: true } },
-    },
-  })
+interface SystemsPageProps {
+  searchParams: Promise<{
+    search?: string
+    status?: string
+    category?: string
+  }>
+}
+
+export default async function SystemsPage({ searchParams }: SystemsPageProps) {
+  const params = await searchParams
+  
+  const filters: SystemFilters = {
+    search: params.search,
+    status: params.status as SystemFilters['status'],
+    category: params.category,
+  }
+  
+  const [systems, filterOptions] = await Promise.all([
+    getFilteredSystems(filters),
+    getSystemFilterOptions(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -29,6 +44,9 @@ export default async function SystemsPage() {
           </Link>
         </Button>
       </div>
+      <Suspense fallback={<div>Loading filters...</div>}>
+        <SystemListFilter categories={filterOptions.categories} />
+      </Suspense>
       <SystemList systems={systems} />
     </div>
   )

@@ -1,19 +1,35 @@
-import { prisma } from '@/lib/prisma'
+import { Suspense } from 'react'
+import { getFilteredAssets, getAssetFilterOptions, type AssetFilters } from '@/app/actions/assets'
 import { AssetList } from '@/components/assets/asset-list'
+import { AssetListFilter } from '@/components/assets/asset-list-filter'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import type { AssetStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AssetsPage() {
-  const assets = await prisma.asset.findMany({
-    orderBy: { name: 'asc' },
-    include: {
-      system: { select: { name: true, slug: true } },
-      createdBy: { select: { name: true, username: true } },
-    },
-  })
+interface AssetsPageProps {
+  searchParams: Promise<{
+    search?: string
+    status?: string
+    systemId?: string
+  }>
+}
+
+export default async function AssetsPage({ searchParams }: AssetsPageProps) {
+  const params = await searchParams
+  
+  const filters: AssetFilters = {
+    search: params.search,
+    status: params.status as AssetStatus,
+    systemId: params.systemId,
+  }
+  
+  const [assets, filterOptions] = await Promise.all([
+    getFilteredAssets(filters),
+    getAssetFilterOptions(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -29,6 +45,9 @@ export default async function AssetsPage() {
           </Link>
         </Button>
       </div>
+      <Suspense fallback={<div>Loading filters...</div>}>
+        <AssetListFilter systems={filterOptions.systems} />
+      </Suspense>
       <AssetList assets={assets} />
     </div>
   )
