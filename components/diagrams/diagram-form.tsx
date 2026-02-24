@@ -37,23 +37,6 @@ interface DiagramFormProps {
   systemId?: string
 }
 
-const nodeIcons: Record<NodeType, string> = {
-  videoSource: '📹',
-  display: '🖥️',
-  videoSwitcher: '🔀',
-  processor: '⚙️',
-  audioSource: '🎤',
-  speaker: '🔊',
-  audioMixer: '🎛️',
-  amplifier: '📢',
-  controller: '🎮',
-  networkSwitch: '🌐',
-  touchPanel: '📱',
-  input: '📥',
-  output: '📤',
-  label: '🏷️',
-}
-
 type DiagramTypeValue = 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'
 
 export function DiagramForm({ systems, systemId }: DiagramFormProps) {
@@ -90,7 +73,6 @@ export function DiagramForm({ systems, systemId }: DiagramFormProps) {
       data: {
         label,
         nodeType: type,
-        icon: nodeIcons[type] || '📦',
       },
     }
     setNodes((nds) => [...nds, newNode])

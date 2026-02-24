@@ -36,23 +36,6 @@ interface DiagramEditFormProps {
   systems: Pick<System, 'id' | 'name'>[]
 }
 
-const nodeIcons: Record<NodeType, string> = {
-  videoSource: '📹',
-  display: '🖥️',
-  videoSwitcher: '🔀',
-  processor: '⚙️',
-  audioSource: '🎤',
-  speaker: '🔊',
-  audioMixer: '🎛️',
-  amplifier: '📢',
-  controller: '🎮',
-  networkSwitch: '🌐',
-  touchPanel: '📱',
-  input: '📥',
-  output: '📤',
-  label: '🏷️',
-}
-
 type DiagramTypeValue = 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'
 
 export function DiagramEditForm({ diagram, systems }: DiagramEditFormProps) {
@@ -102,7 +85,6 @@ export function DiagramEditForm({ diagram, systems }: DiagramEditFormProps) {
       data: {
         label,
         nodeType: type,
-        icon: nodeIcons[type] || '📦',
       },
     }
     setNodes((nds) => [...nds, newNode])

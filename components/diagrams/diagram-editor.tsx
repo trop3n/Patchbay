@@ -58,22 +58,26 @@ export function DiagramEditor({
       >
         <Background variant={BackgroundVariant.Dots} gap={15} size={1} />
         <Controls />
-        <Panel position="top-left" className="bg-background border rounded-lg p-2 max-h-[500px] overflow-y-auto">
+        <Panel position="top-left" className="bg-background border rounded-lg p-2 max-h-[500px] overflow-y-auto w-64">
           <h3 className="text-sm font-semibold mb-2">Add Node</h3>
-          {Object.entries(groupedNodes).map(([category, nodes]) => (
-            <div key={category} className="mb-2">
-              <h4 className="text-xs font-medium text-muted-foreground mb-1">{category}</h4>
-              <div className="flex flex-wrap gap-1">
-                {nodes.map((node) => (
-                  <button
-                    key={node.type}
-                    onClick={() => onAddNode(node.type, node.label)}
-                    className="text-xs px-2 py-1 rounded border bg-background hover:bg-muted transition-colors"
-                    title={node.label}
-                  >
-                    {node.icon} {node.label}
-                  </button>
-                ))}
+          {Object.entries(groupedNodes).map(([category, categoryNodes]) => (
+            <div key={category} className="mb-3">
+              <h4 className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">{category}</h4>
+              <div className="grid grid-cols-2 gap-1">
+                {categoryNodes.map((node) => {
+                  const IconComponent = node.icon
+                  return (
+                    <button
+                      key={node.type}
+                      onClick={() => onAddNode(node.type as NodeType, node.label)}
+                      className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded border bg-background hover:bg-muted transition-colors text-left"
+                      title={node.description || node.label}
+                    >
+                      <IconComponent className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{node.label}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
