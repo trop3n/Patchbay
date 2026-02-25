@@ -424,7 +424,7 @@ volumes:
 - [x] Rack layout management
 - [x] Basic search functionality
 
-### Phase 2: Enhanced Documentation (3-4 weeks) — 🔄 IN PROGRESS
+### Phase 2: Enhanced Documentation (3-4 weeks) — ✅ COMPLETE
 
 **Goal**: Richer diagramming and better UX
 
@@ -434,7 +434,7 @@ volumes:
 - [x] Rich text editor for documents (multiple content types: Rich Text, Markdown, Plain Text)
 - [x] File attachments for systems/documents
 - [x] Advanced filtering and search
-- [ ] User role management (admin/editor/viewer permissions)
+- [x] User role management (admin/editor/viewer permissions)
 - [ ] Audit logging for all changes
 
 ### Phase 3: SIEM-Lite Features (4-6 weeks)

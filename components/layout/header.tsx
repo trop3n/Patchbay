@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Search as SearchIcon } from 'lucide-react'
+
 import type { AuthUser } from '@/types'
 
 interface HeaderProps {
