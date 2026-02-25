@@ -5,15 +5,24 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Edit, MapPin, Calendar, User } from 'lucide-react'
+import { ArrowLeft, Edit, MapPin, Calendar, User, Plus } from 'lucide-react'
 import { DeleteSystemButton } from '@/components/systems/delete-system-button'
 import { SystemAttachments } from '@/components/attachments'
+import type { DeviceStatus } from '@prisma/client'
 
 const statusColors: Record<string, string> = {
   OPERATIONAL: 'bg-green-500',
   DEGRADED: 'bg-yellow-500',
   OFFLINE: 'bg-red-500',
   MAINTENANCE: 'bg-blue-500',
+  UNKNOWN: 'bg-gray-500',
+}
+
+const deviceStatusColors: Record<DeviceStatus, string> = {
+  ONLINE: 'bg-green-500',
+  OFFLINE: 'bg-red-500',
+  WARNING: 'bg-yellow-500',
+  ERROR: 'bg-orange-500',
   UNKNOWN: 'bg-gray-500',
 }
 
@@ -114,6 +123,14 @@ export default async function SystemDetailPage({ params }: SystemDetailPageProps
             <span className="text-2xl font-bold">{system.assets.length}</span>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Devices</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <span className="text-2xl font-bold">{system.devices.length}</span>
+          </CardContent>
+        </Card>
       </div>
 
       {system.diagrams.length > 0 && (
@@ -165,6 +182,66 @@ export default async function SystemDetailPage({ params }: SystemDetailPageProps
                 </Card>
               ))}
             </div>
+          </div>
+        </>
+      )}
+
+      {(system.devices.length > 0 || true) && (
+        <>
+          <Separator />
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Devices</h2>
+              <Button size="sm" asChild>
+                <Link href={`/devices/new?systemId=${system.id}`}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Device
+                </Link>
+              </Button>
+            </div>
+            {system.devices.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {system.devices.map((device) => (
+                  <Card key={device.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg">
+                            <Link href={`/devices/${device.id}`} className="hover:underline">
+                              {device.name}
+                            </Link>
+                          </CardTitle>
+                          {device.deviceType && (
+                            <CardDescription>{device.deviceType}</CardDescription>
+                          )}
+                        </div>
+                        <div className={`w-3 h-3 rounded-full ${deviceStatusColors[device.status]}`} />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        {device.ipAddress && <span>IP: {device.ipAddress}</span>}
+                        {device.manufacturer && device.model && (
+                          <p>{device.manufacturer} {device.model}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-8">
+                  <p className="text-muted-foreground mb-4">No devices added yet</p>
+                  <Button asChild>
+                    <Link href={`/devices/new?systemId=${system.id}`}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Device
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </>
       )}

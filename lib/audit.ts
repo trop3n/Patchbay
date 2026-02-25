@@ -10,6 +10,7 @@ export type EntityType =
   | 'Rack'
   | 'User'
   | 'Attachment'
+  | 'Device'
 
 interface CreateAuditLogInput {
   action: AuditAction

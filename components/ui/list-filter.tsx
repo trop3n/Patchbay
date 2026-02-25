@@ -18,6 +18,7 @@ interface ListFilterProps {
   statusOptions?: { value: string; label: string }[]
   categoryOptions?: string[]
   systemOptions?: { id: string; name: string }[]
+  deviceTypeOptions?: string[]
 }
 
 export function ListFilter({
@@ -25,6 +26,7 @@ export function ListFilter({
   statusOptions,
   categoryOptions,
   systemOptions,
+  deviceTypeOptions,
 }: ListFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -33,6 +35,7 @@ export function ListFilter({
   const currentStatus = searchParams.get('status') || ''
   const currentCategory = searchParams.get('category') || ''
   const currentSystemId = searchParams.get('systemId') || ''
+  const currentDeviceType = searchParams.get('deviceType') || ''
 
   function updateFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -48,7 +51,7 @@ export function ListFilter({
     router.push('', { scroll: false })
   }
 
-  const hasFilters = currentSearch || currentStatus || currentCategory || currentSystemId
+  const hasFilters = currentSearch || currentStatus || currentCategory || currentSystemId || currentDeviceType
 
   return (
     <div className="flex flex-wrap items-end gap-3">
@@ -115,6 +118,25 @@ export function ListFilter({
               {systemOptions.map((sys) => (
                 <SelectItem key={sys.id} value={sys.id}>
                   {sys.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {deviceTypeOptions && deviceTypeOptions.length > 0 && (
+        <div className="min-w-[150px]">
+          <Label className="text-xs text-muted-foreground">Device Type</Label>
+          <Select value={currentDeviceType} onValueChange={(v) => updateFilter('deviceType', v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All types</SelectItem>
+              {deviceTypeOptions.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
                 </SelectItem>
               ))}
             </SelectContent>
