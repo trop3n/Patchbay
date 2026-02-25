@@ -435,7 +435,7 @@ volumes:
 - [x] File attachments for systems/documents
 - [x] Advanced filtering and search
 - [x] User role management (admin/editor/viewer permissions)
-- [ ] Audit logging for all changes
+- [x] Audit logging for all changes
 
 ### Phase 3: SIEM-Lite Features (4-6 weeks)
 

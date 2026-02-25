@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { systemSchema, type SystemInput } from '@/lib/validations/system'
+import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
 import type { SystemStatus } from '@prisma/client'
 
 export async function getSystems() {
@@ -122,6 +123,13 @@ export async function createSystem(data: SystemInput) {
         createdById: session.user.id,
       },
     })
+    await createAuditLog({
+      action: 'CREATE',
+      entityType: 'System',
+      entityId: system.id,
+      userId: session.user.id,
+      changes: { after: sanitizeForAudit(validated.data) },
+    })
     revalidatePath('/systems')
     return { success: true, system }
   } catch (error) {
@@ -140,9 +148,17 @@ export async function updateSystem(id: string, data: Partial<SystemInput>) {
   }
 
   try {
+    const before = await prisma.system.findUnique({ where: { id } })
     const system = await prisma.system.update({
       where: { id },
       data: validated.data,
+    })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'System',
+      entityId: system.id,
+      userId: session.user.id,
+      changes: { before: before ? sanitizeForAudit(before) : undefined, after: sanitizeForAudit(validated.data) },
     })
     revalidatePath('/systems')
     revalidatePath(`/systems/${id}`)
@@ -162,7 +178,15 @@ export async function deleteSystem(id: string) {
   }
 
   try {
+    const system = await prisma.system.findUnique({ where: { id } })
     await prisma.system.delete({ where: { id } })
+    await createAuditLog({
+      action: 'DELETE',
+      entityType: 'System',
+      entityId: id,
+      userId: session.user.id,
+      changes: { before: system ? sanitizeForAudit(system) : undefined },
+    })
     revalidatePath('/systems')
     return { success: true }
   } catch (error) {

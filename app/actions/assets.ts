@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { assetSchema } from '@/lib/validations/asset'
+import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
 import type { AssetStatus } from '@prisma/client'
 
 export async function getAssets(systemId?: string) {
@@ -124,6 +125,13 @@ export async function createAsset(data: CreateAssetInput) {
         createdById: session.user.id,
       },
     })
+    await createAuditLog({
+      action: 'CREATE',
+      entityType: 'Asset',
+      entityId: asset.id,
+      userId: session.user.id,
+      changes: { after: sanitizeForAudit(validated.data) },
+    })
     revalidatePath('/assets')
     if (validated.data.systemId) {
       revalidatePath(`/systems/${validated.data.systemId}`)
@@ -158,6 +166,7 @@ export async function updateAsset(id: string, data: UpdateAssetInput) {
   }
 
   try {
+    const before = await prisma.asset.findUnique({ where: { id } })
     const asset = await prisma.asset.update({
       where: { id },
       data: {
@@ -176,6 +185,13 @@ export async function updateAsset(id: string, data: UpdateAssetInput) {
         ...(validated.data.notes !== undefined && { notes: validated.data.notes }),
         ...(validated.data.systemId !== undefined && { systemId: validated.data.systemId || null }),
       },
+    })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'Asset',
+      entityId: asset.id,
+      userId: session.user.id,
+      changes: { before: before ? { name: before.name } : undefined, after: sanitizeForAudit(validated.data) },
     })
     revalidatePath('/assets')
     revalidatePath(`/assets/${id}`)
@@ -200,9 +216,16 @@ export async function deleteAsset(id: string) {
   try {
     const asset = await prisma.asset.findUnique({
       where: { id },
-      select: { systemId: true },
+      select: { systemId: true, name: true },
     })
     await prisma.asset.delete({ where: { id } })
+    await createAuditLog({
+      action: 'DELETE',
+      entityType: 'Asset',
+      entityId: id,
+      userId: session.user.id,
+      changes: { before: asset ? { name: asset.name } : undefined },
+    })
     revalidatePath('/assets')
     if (asset?.systemId) {
       revalidatePath(`/systems/${asset.systemId}`)

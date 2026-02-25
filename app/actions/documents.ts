@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { documentSchema, type DocumentInput } from '@/lib/validations/document'
+import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
 
 export async function getDocuments(systemId?: string) {
   const session = await auth()
@@ -52,6 +53,13 @@ export async function createDocument(data: DocumentInput) {
         createdById: session.user.id,
       },
     })
+    await createAuditLog({
+      action: 'CREATE',
+      entityType: 'Document',
+      entityId: document.id,
+      userId: session.user.id,
+      changes: { after: sanitizeForAudit(validated.data) },
+    })
     revalidatePath('/documents')
     if (validated.data.systemId) {
       revalidatePath(`/systems/${validated.data.systemId}`)
@@ -73,9 +81,17 @@ export async function updateDocument(id: string, data: Partial<DocumentInput>) {
   }
 
   try {
+    const before = await prisma.document.findUnique({ where: { id } })
     const document = await prisma.document.update({
       where: { id },
       data: validated.data,
+    })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'Document',
+      entityId: document.id,
+      userId: session.user.id,
+      changes: { before: before ? { title: before.title } : undefined, after: sanitizeForAudit(validated.data) },
     })
     revalidatePath('/documents')
     revalidatePath(`/documents/${id}`)
@@ -100,9 +116,16 @@ export async function deleteDocument(id: string) {
   try {
     const document = await prisma.document.findUnique({
       where: { id },
-      select: { systemId: true },
+      select: { systemId: true, title: true },
     })
     await prisma.document.delete({ where: { id } })
+    await createAuditLog({
+      action: 'DELETE',
+      entityType: 'Document',
+      entityId: id,
+      userId: session.user.id,
+      changes: { before: document ? { title: document.title } : undefined },
+    })
     revalidatePath('/documents')
     if (document?.systemId) {
       revalidatePath(`/systems/${document.systemId}`)

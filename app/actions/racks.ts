@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { createAuditLog } from '@/lib/audit'
 
 export interface RackUnit {
   position: number
@@ -63,6 +64,13 @@ export async function createRack(data: CreateRackInput) {
         createdById: session.user.id,
       },
     })
+    await createAuditLog({
+      action: 'CREATE',
+      entityType: 'Rack',
+      entityId: rack.id,
+      userId: session.user.id,
+      changes: { after: { name: data.name, location: data.location, height: data.height, systemId: data.systemId } },
+    })
     revalidatePath('/racks')
     if (data.systemId) {
       revalidatePath(`/systems/${data.systemId}`)
@@ -87,6 +95,7 @@ export async function updateRack(id: string, data: UpdateRackInput) {
   if (!session) throw new Error('Unauthorized')
 
   try {
+    const before = await prisma.rack.findUnique({ where: { id } })
     const updateData: {
       name?: string
       location?: string | null
@@ -104,6 +113,13 @@ export async function updateRack(id: string, data: UpdateRackInput) {
     const rack = await prisma.rack.update({
       where: { id },
       data: updateData,
+    })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'Rack',
+      entityId: rack.id,
+      userId: session.user.id,
+      changes: { before: before ? { name: before.name, location: before.location } : undefined, after: { ...data } },
     })
     revalidatePath('/racks')
     revalidatePath(`/racks/${id}`)
@@ -128,9 +144,16 @@ export async function deleteRack(id: string) {
   try {
     const rack = await prisma.rack.findUnique({
       where: { id },
-      select: { systemId: true },
+      select: { systemId: true, name: true },
     })
     await prisma.rack.delete({ where: { id } })
+    await createAuditLog({
+      action: 'DELETE',
+      entityType: 'Rack',
+      entityId: id,
+      userId: session.user.id,
+      changes: { before: rack ? { name: rack.name } : undefined },
+    })
     revalidatePath('/racks')
     if (rack?.systemId) {
       revalidatePath(`/systems/${rack.systemId}`)

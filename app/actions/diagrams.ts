@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { diagramSchema } from '@/lib/validations/diagram'
+import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
 import type { DiagramType } from '@prisma/client'
 
 export async function getDiagrams(systemId?: string) {
@@ -61,6 +62,13 @@ export async function createDiagram(input: CreateDiagramInput) {
         createdById: session.user.id,
       },
     })
+    await createAuditLog({
+      action: 'CREATE',
+      entityType: 'Diagram',
+      entityId: diagram.id,
+      userId: session.user.id,
+      changes: { after: { title: validated.data.title, type: validated.data.type, systemId: validated.data.systemId } },
+    })
     revalidatePath('/diagrams')
     if (validated.data.systemId) {
       revalidatePath(`/systems/${validated.data.systemId}`)
@@ -90,6 +98,7 @@ export async function updateDiagram(id: string, input: UpdateDiagramInput) {
   }
 
   try {
+    const before = await prisma.diagram.findUnique({ where: { id } })
     const diagram = await prisma.diagram.update({
       where: { id },
       data: {
@@ -99,6 +108,13 @@ export async function updateDiagram(id: string, input: UpdateDiagramInput) {
         ...(validated.data.systemId !== undefined && { systemId: validated.data.systemId || null }),
         ...(validated.data.data !== undefined && { data: validated.data.data as object }),
       },
+    })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'Diagram',
+      entityId: diagram.id,
+      userId: session.user.id,
+      changes: { before: before ? { title: before.title, type: before.type } : undefined, after: sanitizeForAudit(validated.data) },
     })
     revalidatePath('/diagrams')
     revalidatePath(`/diagrams/${id}`)
@@ -123,9 +139,16 @@ export async function deleteDiagram(id: string) {
   try {
     const diagram = await prisma.diagram.findUnique({
       where: { id },
-      select: { systemId: true },
+      select: { systemId: true, title: true, type: true },
     })
     await prisma.diagram.delete({ where: { id } })
+    await createAuditLog({
+      action: 'DELETE',
+      entityType: 'Diagram',
+      entityId: id,
+      userId: session.user.id,
+      changes: { before: diagram ? { title: diagram.title, type: diagram.type } : undefined },
+    })
     revalidatePath('/diagrams')
     if (diagram?.systemId) {
       revalidatePath(`/systems/${diagram.systemId}`)

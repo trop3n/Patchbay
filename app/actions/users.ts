@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { createAuditLog } from '@/lib/audit'
 import type { Role } from '@prisma/client'
 
 export async function getUsers() {
@@ -41,10 +42,21 @@ export async function updateUserRole(userId: string, role: Role) {
   }
 
   try {
+    const before = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    })
     const user = await prisma.user.update({
       where: { id: userId },
       data: { role },
       select: { id: true, name: true, username: true, role: true },
+    })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'User',
+      entityId: userId,
+      userId: session.user.id,
+      changes: { before: { role: before?.role }, after: { role } },
     })
     revalidatePath('/settings')
     return { success: true, user }
@@ -81,6 +93,13 @@ export async function toggleUserActive(userId: string) {
       data: { isActive: !currentUser.isActive },
       select: { id: true, name: true, username: true, isActive: true },
     })
+    await createAuditLog({
+      action: 'UPDATE',
+      entityType: 'User',
+      entityId: userId,
+      userId: session.user.id,
+      changes: { before: { isActive: currentUser.isActive }, after: { isActive: !currentUser.isActive } },
+    })
     revalidatePath('/settings')
     return { success: true, user }
   } catch (error) {
@@ -110,6 +129,13 @@ export async function createUser(data: { email: string; username: string; name?:
         role: data.role || 'VIEWER',
       },
       select: { id: true, name: true, username: true, email: true, role: true },
+    })
+    await createAuditLog({
+      action: 'CREATE',
+      entityType: 'User',
+      entityId: user.id,
+      userId: session.user.id,
+      changes: { after: { email: data.email, username: data.username, name: data.name, role: data.role || 'VIEWER' } },
     })
     revalidatePath('/settings')
     return { success: true, user }

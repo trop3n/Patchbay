@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidelines for AI coding agents working on Patchbay.
+Guidelines for AI coding agents working on Patchbay - an A/V technical documentation and diagramming platform.
 
 ## Build/Lint/Test Commands
 
@@ -10,22 +10,23 @@ npm run dev                  # Development server (http://localhost:3000)
 npm run build                # Build for production
 npm run lint                 # Lint code (ESLint via next lint)
 npm run typecheck            # Type check (tsc --noEmit)
-npm test                     # Run all tests
-npm test -- path/to/test.test.ts           # Run single test file
-npm test -- --testNamePattern="test name"  # Run tests by name pattern
 
+# Testing
+npm test                                    # Run all tests
+npm test -- path/to/test.test.ts            # Run single test file
+npm test -- --testNamePattern="test name"   # Run tests matching name
+
+# Database
 npx prisma generate          # Generate Prisma client
 npx prisma migrate dev       # Run migrations (development)
 npx prisma db seed           # Seed database
-npx prisma studio            # Open database GUI
-
-npm run docker:dev           # Start dev Docker environment
-npm run docker:dev:down      # Stop dev Docker environment
 ```
 
-## Tech Stack & Structure
+## Tech Stack
 
-Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5, Tailwind CSS + shadcn/ui, React Flow (@xyflow/react), Excalidraw, Zod, Jest + React Testing Library
+Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5, Tailwind CSS + shadcn/ui, React Flow (@xyflow/react), Excalidraw, Zod, Jest, React Hook Form
+
+### Project Structure
 
 ```
 app/
@@ -35,7 +36,6 @@ app/
 components/
   ui/                   # shadcn/ui components
   diagrams/             # React Flow and Excalidraw components
-  layout/               # Header, Sidebar
 lib/
   auth.ts               # NextAuth configuration
   prisma.ts             # Prisma client singleton
@@ -45,14 +45,17 @@ prisma/schema.prisma    # Database schema
 types/index.ts          # Shared TypeScript types
 ```
 
-Prisma models: User, System, Diagram, Document, Asset, Device, DeviceLog, Rack, AuditLog
-Enums: Role (ADMIN/EDITOR/VIEWER), SystemStatus, DiagramType, AssetStatus, DeviceStatus, ContentType, LogLevel
+### Prisma Models
+
+User, System, Diagram, Document, Asset, Device, DeviceLog, Rack, AuditLog, Attachment
+
+Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus`, `DeviceStatus`, `ContentType`, `LogLevel`
 
 ## Code Style
 
-### Imports & Directives
+### Imports
 
-Place `'use client'` or `'use server'` as the first line. Import order: React/Next.js → Third-party → `@/` imports → Type imports. Separate groups with blank lines.
+Place `'use client'` or `'use server'` first. Import order: React/Next.js → Third-party → `@/` imports → Type imports.
 
 ```typescript
 'use client'
@@ -63,22 +66,30 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createSystem } from '@/app/actions/systems'
 
-import type { AuthUser } from '@/types'
+import type { SystemStatus } from '@prisma/client'
 ```
 
 ### Formatting & Naming
 
 - 2-space indentation, single quotes, semicolons
-- No trailing commas in imports; trailing commas in multiline arrays/objects
 - Components: PascalCase files (`SystemCard.tsx`), `export function SystemCard()`
 - Server actions: camelCase files (`systems.ts`), camelCase functions (`getSystems`)
 - Constants: SCREAMING_SNAKE_CASE (`statusOptions`)
-- Interface for props/extensible objects; Type for unions/Prisma-derived types
-- Avoid `any`; use `unknown` when truly unknown
+- Interface for props; Type for unions/Prisma-derived types
 
 ### React Components
 
-Function declarations (NOT arrow functions). `export default` only for page components; named exports for reusable components. Define interfaces for props above component.
+Function declarations (NOT arrow functions). `export default` only for page components.
+
+```typescript
+interface SystemListProps {
+  systems: System[]
+}
+
+export function SystemList({ systems }: SystemListProps) {
+  const [error, setError] = useState<string | null>(null)
+}
+```
 
 ### Server Actions
 
@@ -114,51 +125,44 @@ export async function createSystem(data: SystemInput) {
 }
 ```
 
-### Error Handling
+### Error Handling & Database
 
 - Server actions: return `{ error: string }` or `{ error: string, issues: ZodIssue[] }`
-- Client: `useState<string | null>` with `text-destructive` class
+- Client: `useState<string | null>(null)` with `text-destructive` class
 - Prisma: wrap in try/catch, log with `console.error()`
+- Import from `@/lib/prisma`. Use `select` to limit fields, `include` for relations
 
-### Database Operations
+### Form Handling & Authentication
 
-Import from `@/lib/prisma`. Use `select` to limit fields, `include` for relations.
-
-```typescript
-return prisma.system.findMany({
-  orderBy: { createdAt: 'desc' },
-  include: {
-    createdBy: { select: { name: true, username: true } },
-    _count: { select: { diagrams: true, assets: true } },
-  },
-})
-```
-
-### Form Handling
-
-Use FormData API. Extract with `formData.get('name') as string`.
-
-### Authentication
-
+- Use FormData API: `formData.get('name') as string`
 - Server-side: `import { auth } from '@/lib/auth'`
 - Client-side: `import { signIn, signOut } from 'next-auth/react'`
-- Session user: `id`, `email`, `name`, `username`, `role` (ADMIN/EDITOR/VIEWER)
-- Restrict delete operations: `if (session.user.role !== 'ADMIN' && session.user.role !== 'EDITOR')`
+- Session: `id`, `email`, `name`, `username`, `role` (ADMIN/EDITOR/VIEWER)
+- Restrict delete: `if (session.user.role !== 'ADMIN' && session.user.role !== 'EDITOR')`
 
 ### UI Components
 
 Use shadcn/ui from `@/components/ui/`. Common: Button, Input, Label, Textarea, Select, Dialog, Card, Badge, Table, Tabs, Avatar, DropdownMenu, ScrollArea, Separator, Sheet.
 
-### Diagram Components
+## Page Components
 
-- React Flow: `@/components/diagrams/diagram-editor.tsx`, `av-node.tsx`
-- Excalidraw: `@/components/diagrams/excalidraw-editor.tsx`, `excalidraw-viewer.tsx`
+```typescript
+export const dynamic = 'force-dynamic'
 
-## Git Commits
+interface SystemsPageProps {
+  searchParams: Promise<{ search?: string; status?: string }>
+}
+
+export default async function SystemsPage({ searchParams }: SystemsPageProps) {
+  const params = await searchParams
+  const systems = await getFilteredSystems(params)
+  return <SystemList systems={systems} />
+}
+```
+
+## Git Commits & Security
 
 Conventional commits: `feat(diagrams): add signal flow`, `fix(auth): handle timeout`
-
-## Security
 
 - Never commit `.env` files or secrets
 - Validate all input with Zod schemas in `lib/validations/`

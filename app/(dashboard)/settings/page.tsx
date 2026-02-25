@@ -1,9 +1,11 @@
 import { auth } from '@/lib/auth'
 import { getUsers } from '@/app/actions/users'
+import { getAuditLogs } from '@/app/actions/audit-logs'
 import { UserList } from '@/components/users/user-list'
+import { AuditLogList } from '@/components/audit/audit-log-list'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Shield, User } from 'lucide-react'
+import { Shield, User, FileText } from 'lucide-react'
 import type { Role } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -19,6 +21,20 @@ interface UserInfo {
   createdAt: Date
 }
 
+interface AuditLogItem {
+  id: string
+  action: string
+  entityType: string
+  entityId: string
+  changes: Record<string, unknown> | null
+  createdAt: Date
+  user: {
+    name: string | null
+    username: string
+    email: string
+  }
+}
+
 export default async function SettingsPage() {
   const session = await auth()
   if (!session) {
@@ -27,9 +43,11 @@ export default async function SettingsPage() {
 
   const isAdmin = session.user.role === 'ADMIN'
   let users: UserInfo[] = []
+  let auditLogs: Awaited<ReturnType<typeof getAuditLogs>> = []
 
   if (isAdmin) {
     users = await getUsers()
+    auditLogs = await getAuditLogs()
   }
 
   return (
@@ -49,6 +67,12 @@ export default async function SettingsPage() {
             <TabsTrigger value="users" className="gap-2">
               <Shield className="w-4 h-4" />
               User Management
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="audit" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Audit Logs
             </TabsTrigger>
           )}
         </TabsList>
@@ -83,6 +107,12 @@ export default async function SettingsPage() {
         {isAdmin && (
           <TabsContent value="users">
             <UserList users={users} currentUserId={session.user.id} />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="audit">
+            <AuditLogList initialLogs={auditLogs as unknown as AuditLogItem[]} />
           </TabsContent>
         )}
       </Tabs>
