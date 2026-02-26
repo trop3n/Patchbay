@@ -3,6 +3,7 @@ import net from 'net'
 import { prisma } from '../lib/prisma'
 import { parseSyslogMessage, getLogLevelFromSeverity } from '../lib/syslog/parser'
 import { syslogConfig } from '../lib/syslog/config'
+import { recordDeviceStatusChange } from '../lib/uptime'
 
 interface DeviceCache {
   [ip: string]: string
@@ -52,29 +53,17 @@ async function storeLog(
       })
 
       if (level === 'ERROR' || level === 'CRITICAL') {
-        await prisma.device.update({
-          where: { id: deviceId },
-          data: { 
-            status: 'ERROR',
-            lastSeenAt: new Date(),
-          },
-        })
+        await recordDeviceStatusChange(deviceId, 'ERROR', `syslog:${sourceIp}`)
       } else if (level === 'WARNING') {
         const device = await prisma.device.findUnique({
           where: { id: deviceId },
           select: { status: true },
         })
         if (device && device.status !== 'ERROR' && device.status !== 'OFFLINE') {
-          await prisma.device.update({
-            where: { id: deviceId },
-            data: { lastSeenAt: new Date() },
-          })
+          await recordDeviceStatusChange(deviceId, 'WARNING', `syslog:${sourceIp}`)
         }
       } else {
-        await prisma.device.update({
-          where: { id: deviceId },
-          data: { lastSeenAt: new Date() },
-        })
+        await recordDeviceStatusChange(deviceId, 'ONLINE', `syslog:${sourceIp}`)
       }
     }
 

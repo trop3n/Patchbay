@@ -186,9 +186,23 @@ model Device {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  logs DeviceLog[]
+  logs           DeviceLog[]
+  statusHistory  DeviceStatusHistory[]
 
   @@map("devices")
+}
+
+model DeviceStatusHistory {
+  id          String       @id @default(cuid())
+  deviceId    String
+  device      Device       @relation(fields: [deviceId], references: [id])
+  status      DeviceStatus
+  previousStatus DeviceStatus?
+  source      String?
+  recordedAt  DateTime     @default(now())
+
+  @@index([deviceId, recordedAt])
+  @@map("device_status_history")
 }
 
 model DeviceLog {

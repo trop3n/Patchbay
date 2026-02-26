@@ -7,6 +7,7 @@ import { type Device, DeviceStatus } from '@prisma/client'
 import { type DeviceLog, LogLevel } from '@prisma/client'
 import { type AuditLog } from '@prisma/client'
 import { type Attachment } from '@prisma/client'
+import { SnmpVersion } from '@prisma/client'
 
 export type {
   System,
@@ -20,7 +21,7 @@ export type {
   Attachment,
 }
 
-export { SystemStatus, DiagramType, AssetStatus, ContentType, DeviceStatus, Role, LogLevel }
+export { SystemStatus, DiagramType, AssetStatus, ContentType, DeviceStatus, Role, LogLevel, SnmpVersion }
 
 export type SystemWithRelations = System & {
   diagrams: Diagram[]

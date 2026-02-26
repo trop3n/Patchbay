@@ -1,12 +1,15 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getDevice } from '@/app/actions/devices'
+import { getDeviceUptimeStats } from '@/app/actions/uptime'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Edit, Network, Calendar, Package, Cpu, Clock } from 'lucide-react'
 import { DeleteDeviceButton } from '@/components/devices/delete-device-button'
 import { DeviceStatusUpdate } from '@/components/devices/device-status-update'
+import { DeviceUptimeStats } from '@/components/devices/device-uptime-stats'
 import type { DeviceStatus } from '@prisma/client'
 
 interface DeviceDetailPageProps {
@@ -31,7 +34,10 @@ const statusLabels: Record<DeviceStatus, string> = {
 
 export default async function DeviceDetailPage({ params }: DeviceDetailPageProps) {
   const { id } = await params
-  const device = await getDevice(id)
+  const [device, uptimeStats] = await Promise.all([
+    getDevice(id),
+    getDeviceUptimeStats(id),
+  ])
 
   if (!device) {
     notFound()
@@ -149,30 +155,48 @@ export default async function DeviceDetailPage({ params }: DeviceDetailPageProps
       {device.logs && device.logs.length > 0 && (
         <>
           <Separator />
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Logs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {device.logs.slice(0, 10).map((log) => (
-                  <div key={log.id} className="flex items-start gap-3 text-sm">
-                    <span className="text-muted-foreground shrink-0">
-                      {new Date(log.timestamp).toLocaleString()}
-                    </span>
-                    <span className={`font-medium ${
-                      log.level === 'ERROR' || log.level === 'CRITICAL' ? 'text-red-500' :
-                      log.level === 'WARNING' ? 'text-yellow-500' :
-                      log.level === 'INFO' ? 'text-green-500' : 'text-muted-foreground'
-                    }`}>
-                      [{log.level}]
-                    </span>
-                    <span className="truncate">{log.message}</span>
+          <Tabs defaultValue="logs">
+            <TabsList>
+              <TabsTrigger value="logs">Recent Logs</TabsTrigger>
+              <TabsTrigger value="uptime">Uptime Stats</TabsTrigger>
+            </TabsList>
+            <TabsContent value="logs">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Logs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {device.logs.slice(0, 10).map((log) => (
+                      <div key={log.id} className="flex items-start gap-3 text-sm">
+                        <span className="text-muted-foreground shrink-0">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
+                        <span className={`font-medium ${
+                          log.level === 'ERROR' || log.level === 'CRITICAL' ? 'text-red-500' :
+                          log.level === 'WARNING' ? 'text-yellow-500' :
+                          log.level === 'INFO' ? 'text-green-500' : 'text-muted-foreground'
+                        }`}>
+                          [{log.level}]
+                        </span>
+                        <span className="truncate">{log.message}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="uptime">
+              <DeviceUptimeStats stats={uptimeStats} />
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
+
+      {(!device.logs || device.logs.length === 0) && (
+        <>
+          <Separator />
+          <DeviceUptimeStats stats={uptimeStats} />
         </>
       )}
     </div>

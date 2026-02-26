@@ -61,9 +61,9 @@ types/index.ts          # Shared types
 
 ### Prisma Models
 
-User, System, Diagram, Document, Asset, Device, DeviceLog, Rack, AuditLog, Attachment
+User, System, Diagram, Document, Asset, Device, DeviceLog, DeviceStatusHistory, Rack, AuditLog, Attachment
 
-Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus`, `DeviceStatus`, `ContentType`, `LogLevel`
+Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus`, `DeviceStatus`, `SnmpVersion`, `ContentType`, `LogLevel`
 
 ## Code Style
 

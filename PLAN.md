@@ -447,7 +447,7 @@ volumes:
 - [x] Syslog receiver (UDP/TCP listener for device logs)
 - [x] Log viewer with filtering and search
 - [x] Basic SNMP polling (optional)
-- [ ] Uptime history tracking
+- [x] Uptime history tracking
 - [ ] Alert thresholds (email or webhook notifications)
 - [ ] Retention policies for logs
 

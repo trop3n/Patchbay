@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma'
 import { snmpConfig, standardOids } from '../lib/snmp/config'
 import type { SnmpPollResult, SnmpDeviceConfig } from '../lib/snmp/poller'
 import { mapSnmpResultToStatus } from '../lib/snmp/poller'
+import { recordDeviceStatusChange } from '../lib/uptime'
 
 function createSnmpSession(config: SnmpDeviceConfig): snmp.Session {
   const options: snmp.SessionOptions = {
@@ -98,14 +99,23 @@ async function updateDeviceStatus(
   const status = mapSnmpResultToStatus(result)
 
   try {
+    const changeResult = await recordDeviceStatusChange(
+      deviceId,
+      status,
+      'snmp-poller'
+    )
+
     await prisma.device.update({
       where: { id: deviceId },
       data: {
-        status,
-        lastSeenAt: result.success ? new Date() : undefined,
         snmpLastPolled: new Date(),
+        ...(result.success && { lastSeenAt: new Date() }),
       },
     })
+
+    if (changeResult.statusChanged) {
+      console.log(`[SNMP] ${deviceId.slice(0, 8)}... Status changed: ${changeResult.previousStatus} -> ${changeResult.newStatus}`)
+    }
 
     if (!result.success && result.error) {
       await prisma.deviceLog.create({
