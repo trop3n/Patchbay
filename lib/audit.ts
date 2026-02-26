@@ -11,6 +11,7 @@ export type EntityType =
   | 'User'
   | 'Attachment'
   | 'Device'
+  | 'AlertThreshold'
 
 interface CreateAuditLogInput {
   action: AuditAction

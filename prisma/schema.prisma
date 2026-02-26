@@ -76,13 +76,14 @@ model User {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  systems      System[]
-  diagrams     Diagram[]
-  documents    Document[]
-  assets       Asset[]
-  racks        Rack[]
-  auditLogs    AuditLog[]
-  attachments  Attachment[]
+  systems        System[]
+  diagrams       Diagram[]
+  documents      Document[]
+  assets         Asset[]
+  racks          Rack[]
+  auditLogs      AuditLog[]
+  attachments    Attachment[]
+  alertThresholds AlertThreshold[]
 
   @@map("users")
 }
@@ -101,12 +102,14 @@ model System {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  diagrams    Diagram[]
-  documents   Document[]
-  assets      Asset[]
-  devices     Device[]
-  racks       Rack[]
-  attachments Attachment[]
+  diagrams        Diagram[]
+  documents       Document[]
+  assets          Asset[]
+  devices         Device[]
+  racks           Rack[]
+  attachments     Attachment[]
+  alertThresholds AlertThreshold[]
+  alerts          Alert[]
 
   @@map("systems")
 }
@@ -186,8 +189,10 @@ model Device {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  logs           DeviceLog[]
-  statusHistory  DeviceStatusHistory[]
+  logs            DeviceLog[]
+  statusHistory   DeviceStatusHistory[]
+  alertThresholds AlertThreshold[]
+  alerts          Alert[]
 
   @@map("devices")
 }
@@ -267,4 +272,73 @@ model Attachment {
   @@index([systemId])
   @@index([documentId])
   @@map("attachments")
+}
+
+enum AlertCondition {
+  DEVICE_OFFLINE
+  DEVICE_ERROR
+  LOW_UPTIME
+  STATUS_CHANGE
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model AlertThreshold {
+  id           String         @id @default(cuid())
+  name         String
+  description  String?
+  condition    AlertCondition
+  severity     AlertSeverity  @default(WARNING)
+  threshold    Int?
+  thresholdUnit String?
+  enabled      Boolean        @default(true)
+  notifyEmail  Boolean        @default(true)
+  notifyWebhook Boolean       @default(false)
+  webhookUrl   String?
+  emailRecipients String?
+  systemId     String?
+  system       System?        @relation(fields: [systemId], references: [id])
+  deviceId     String?
+  device       Device?        @relation(fields: [deviceId], references: [id])
+  createdById  String
+  createdBy    User           @relation(fields: [createdById], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  alerts Alert[]
+
+  @@map("alert_thresholds")
+}
+
+model Alert {
+  id            String       @id @default(cuid())
+  thresholdId   String
+  threshold     AlertThreshold @relation(fields: [thresholdId], references: [id])
+  deviceId      String?
+  device        Device?      @relation(fields: [deviceId], references: [id])
+  systemId      String?
+  system        System?      @relation(fields: [systemId], references: [id])
+  severity      AlertSeverity
+  status        AlertStatus  @default(ACTIVE)
+  message       String       @db.Text
+  metadata      Json?
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  resolvedAt    DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([thresholdId, createdAt])
+  @@index([deviceId, createdAt])
+  @@index([status])
+  @@map("alerts")
 }

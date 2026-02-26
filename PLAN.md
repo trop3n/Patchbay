@@ -448,7 +448,7 @@ volumes:
 - [x] Log viewer with filtering and search
 - [x] Basic SNMP polling (optional)
 - [x] Uptime history tracking
-- [ ] Alert thresholds (email or webhook notifications)
+- [x] Alert thresholds (email or webhook notifications)
 - [ ] Retention policies for logs
 
 ---

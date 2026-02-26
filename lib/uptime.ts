@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { checkAndTriggerAlerts } from '@/lib/alerts/checker'
 import type { DeviceStatus } from '@prisma/client'
 
 export interface StatusChangeResult {
@@ -14,7 +15,12 @@ export async function recordDeviceStatusChange(
 ): Promise<StatusChangeResult> {
   const device = await prisma.device.findUnique({
     where: { id: deviceId },
-    select: { status: true },
+    select: { 
+      status: true, 
+      name: true, 
+      systemId: true,
+      system: { select: { id: true, name: true } },
+    },
   })
 
   const previousStatus = device?.status || null
@@ -36,6 +42,17 @@ export async function recordDeviceStatusChange(
         status: newStatus,
         lastSeenAt: newStatus === 'ONLINE' ? new Date() : undefined,
       },
+    })
+
+    checkAndTriggerAlerts({
+      deviceId,
+      systemId: device?.systemId,
+      deviceName: device?.name,
+      systemName: device?.system?.name,
+      previousStatus,
+      newStatus,
+    }).catch((error) => {
+      console.error('[Uptime] Error checking alerts:', error)
     })
   }
 

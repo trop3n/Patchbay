@@ -61,9 +61,9 @@ types/index.ts          # Shared types
 
 ### Prisma Models
 
-User, System, Diagram, Document, Asset, Device, DeviceLog, DeviceStatusHistory, Rack, AuditLog, Attachment
+User, System, Diagram, Document, Asset, Device, DeviceLog, DeviceStatusHistory, AlertThreshold, Alert, Rack, AuditLog, Attachment
 
-Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus`, `DeviceStatus`, `SnmpVersion`, `ContentType`, `LogLevel`
+Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus`, `DeviceStatus`, `SnmpVersion`, `AlertCondition`, `AlertSeverity`, `AlertStatus`, `ContentType`, `LogLevel`
 
 ## Code Style
 
@@ -186,3 +186,5 @@ Required: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
 Optional (syslog): `SYSLOG_UDP_PORT`, `SYSLOG_TCP_PORT`, `SYSLOG_HOST`
 
 Optional (snmp): `SNMP_DEFAULT_PORT`, `SNMP_DEFAULT_COMMUNITY`, `SNMP_POLL_INTERVAL`
+
+Optional (alerts): `ALERT_EMAIL_ENABLED`, `ALERT_EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `ALERT_COOLDOWN_MINUTES`

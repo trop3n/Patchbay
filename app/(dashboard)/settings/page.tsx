@@ -1,11 +1,15 @@
 import { auth } from '@/lib/auth'
 import { getUsers } from '@/app/actions/users'
 import { getAuditLogs } from '@/app/actions/audit-logs'
+import { getAlertThresholds } from '@/app/actions/alerts'
 import { UserList } from '@/components/users/user-list'
 import { AuditLogList } from '@/components/audit/audit-log-list'
+import { AlertThresholdList } from '@/components/alerts/alert-threshold-list'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Shield, User, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Shield, User, FileText, Bell, Plus } from 'lucide-react'
+import Link from 'next/link'
 import type { Role } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -42,12 +46,18 @@ export default async function SettingsPage() {
   }
 
   const isAdmin = session.user.role === 'ADMIN'
+  const isEditor = session.user.role === 'EDITOR'
   let users: UserInfo[] = []
   let auditLogs: Awaited<ReturnType<typeof getAuditLogs>> = []
+  let alertThresholds: Awaited<ReturnType<typeof getAlertThresholds>> = []
 
   if (isAdmin) {
     users = await getUsers()
     auditLogs = await getAuditLogs()
+  }
+
+  if (isAdmin || isEditor) {
+    alertThresholds = await getAlertThresholds()
   }
 
   return (
@@ -63,6 +73,12 @@ export default async function SettingsPage() {
             <User className="w-4 h-4" />
             Account
           </TabsTrigger>
+          {(isAdmin || isEditor) && (
+            <TabsTrigger value="alerts" className="gap-2">
+              <Bell className="w-4 h-4" />
+              Alert Thresholds
+            </TabsTrigger>
+          )}
           {isAdmin && (
             <TabsTrigger value="users" className="gap-2">
               <Shield className="w-4 h-4" />
@@ -103,6 +119,22 @@ export default async function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {(isAdmin || isEditor) && (
+          <TabsContent value="alerts">
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button asChild>
+                  <Link href="/settings/alerts/new">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Threshold
+                  </Link>
+                </Button>
+              </div>
+              <AlertThresholdList thresholds={alertThresholds} />
+            </div>
+          </TabsContent>
+        )}
 
         {isAdmin && (
           <TabsContent value="users">
