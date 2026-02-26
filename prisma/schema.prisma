@@ -342,3 +342,18 @@ model Alert {
   @@index([status])
   @@map("alerts")
 }
+
+model RetentionPolicy {
+  id                    String   @id @default(cuid())
+  name                  String   @default("Default Policy")
+  deviceLogRetentionDays Int    @default(30)
+  statusHistoryRetentionDays Int @default(90)
+  alertRetentionDays    Int      @default(30)
+  resolvedAlertRetentionDays Int @default(7)
+  enabled               Boolean  @default(true)
+  lastCleanupAt         DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("retention_policies")
+}

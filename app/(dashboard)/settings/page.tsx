@@ -2,13 +2,15 @@ import { auth } from '@/lib/auth'
 import { getUsers } from '@/app/actions/users'
 import { getAuditLogs } from '@/app/actions/audit-logs'
 import { getAlertThresholds } from '@/app/actions/alerts'
+import { getRetentionSettings, getCleanupPreview } from '@/app/actions/retention'
 import { UserList } from '@/components/users/user-list'
 import { AuditLogList } from '@/components/audit/audit-log-list'
 import { AlertThresholdList } from '@/components/alerts/alert-threshold-list'
+import { RetentionSettings } from '@/components/settings/retention-settings'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Shield, User, FileText, Bell, Plus } from 'lucide-react'
+import { Shield, User, FileText, Bell, Plus, Database } from 'lucide-react'
 import Link from 'next/link'
 import type { Role } from '@prisma/client'
 
@@ -50,10 +52,14 @@ export default async function SettingsPage() {
   let users: UserInfo[] = []
   let auditLogs: Awaited<ReturnType<typeof getAuditLogs>> = []
   let alertThresholds: Awaited<ReturnType<typeof getAlertThresholds>> = []
+  let retentionSettings = null
+  let retentionStats = null
 
   if (isAdmin) {
     users = await getUsers()
     auditLogs = await getAuditLogs()
+    retentionSettings = await getRetentionSettings()
+    retentionStats = await getCleanupPreview()
   }
 
   if (isAdmin || isEditor) {
@@ -77,6 +83,12 @@ export default async function SettingsPage() {
             <TabsTrigger value="alerts" className="gap-2">
               <Bell className="w-4 h-4" />
               Alert Thresholds
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="retention" className="gap-2">
+              <Database className="w-4 h-4" />
+              Retention
             </TabsTrigger>
           )}
           {isAdmin && (
@@ -133,6 +145,12 @@ export default async function SettingsPage() {
               </div>
               <AlertThresholdList thresholds={alertThresholds} />
             </div>
+          </TabsContent>
+        )}
+
+        {isAdmin && retentionSettings && retentionStats && (
+          <TabsContent value="retention">
+            <RetentionSettings settings={retentionSettings} stats={retentionStats} />
           </TabsContent>
         )}
 

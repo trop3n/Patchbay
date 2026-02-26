@@ -34,6 +34,9 @@ npm run syslog:dev           # Port 1514 (no sudo)
 
 # SNMP Poller (optional)
 npm run snmp                 # Start SNMP poller (continuous polling)
+
+# Retention Cleanup (optional)
+npm run retention:cleanup    # Run retention cleanup job
 ```
 
 ## Tech Stack
@@ -61,7 +64,7 @@ types/index.ts          # Shared types
 
 ### Prisma Models
 
-User, System, Diagram, Document, Asset, Device, DeviceLog, DeviceStatusHistory, AlertThreshold, Alert, Rack, AuditLog, Attachment
+User, System, Diagram, Document, Asset, Device, DeviceLog, DeviceStatusHistory, AlertThreshold, Alert, Rack, AuditLog, Attachment, RetentionPolicy
 
 Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus`, `DeviceStatus`, `SnmpVersion`, `AlertCondition`, `AlertSeverity`, `AlertStatus`, `ContentType`, `LogLevel`
 

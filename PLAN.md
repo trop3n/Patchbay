@@ -449,7 +449,7 @@ volumes:
 - [x] Basic SNMP polling (optional)
 - [x] Uptime history tracking
 - [x] Alert thresholds (email or webhook notifications)
-- [ ] Retention policies for logs
+- [x] Retention policies for logs
 
 ---
 
