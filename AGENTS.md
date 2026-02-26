@@ -19,11 +19,21 @@ npm test -- --testNamePattern="test name"   # Run tests matching name
 # Database
 npx prisma generate          # Generate Prisma client
 npx prisma migrate dev       # Run migrations (development)
+npx prisma migrate deploy    # Run migrations (production)
 npx prisma db seed           # Seed database
+npx prisma studio            # Open database GUI
+
+# Docker
+npm run docker:dev           # Start dev containers
+npm run docker:dev:build     # Rebuild and start dev containers
+npm run docker:dev:down      # Stop dev containers
 
 # Syslog Server (optional)
-npm run syslog               # Start syslog receiver (requires root/sudo for port 514)
-npm run syslog:dev           # Start syslog on non-privileged ports (1514)
+npm run syslog               # Requires sudo for port 514
+npm run syslog:dev           # Port 1514 (no sudo)
+
+# SNMP Poller (optional)
+npm run snmp                 # Start SNMP poller (continuous polling)
 ```
 
 ## Tech Stack
@@ -35,18 +45,18 @@ Next.js 14 (App Router), TypeScript 5.x, PostgreSQL + Prisma ORM, NextAuth.js v5
 ```
 app/
   (auth)/               # Auth routes (login, error)
-  (dashboard)/          # Protected routes (systems, diagrams, assets, racks, documents)
-  actions/              # Server actions (systems.ts, diagrams.ts, etc.)
+  (dashboard)/          # Protected routes
+  actions/              # Server actions
 components/
   ui/                   # shadcn/ui components
-  diagrams/             # React Flow and Excalidraw components
+  diagrams/             # React Flow and Excalidraw
 lib/
   auth.ts               # NextAuth configuration
   prisma.ts             # Prisma client singleton
-  utils.ts              # Utility functions (cn)
   validations/          # Zod schemas
+  audit.ts              # Audit logging
 prisma/schema.prisma    # Database schema
-types/index.ts          # Shared TypeScript types
+types/index.ts          # Shared types
 ```
 
 ### Prisma Models
@@ -59,17 +69,15 @@ Enums: `Role` (ADMIN/EDITOR/VIEWER), `SystemStatus`, `DiagramType`, `AssetStatus
 
 ### Imports
 
-Place `'use client'` or `'use server'` first. Import order: React/Next.js → Third-party → `@/` imports → Type imports.
+Place `'use client'` or `'use server'` first. Import order: React/Next.js → Third-party → `@/` imports → Type imports (with `import type`).
 
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
 import { Button } from '@/components/ui/button'
 import { createSystem } from '@/app/actions/systems'
-
 import type { SystemStatus } from '@prisma/client'
 ```
 
@@ -80,6 +88,7 @@ import type { SystemStatus } from '@prisma/client'
 - Server actions: camelCase files (`systems.ts`), camelCase functions (`getSystems`)
 - Constants: SCREAMING_SNAKE_CASE (`statusOptions`)
 - Interface for props; Type for unions/Prisma-derived types
+- NO code comments unless explicitly requested
 
 ### React Components
 
@@ -97,37 +106,7 @@ export function SystemList({ systems }: SystemListProps) {
 
 ### Server Actions
 
-Place in `app/actions/`. Check auth first, throw `Error('Unauthorized')` if missing. Return `{ success: true, data }` or `{ error: string, issues?: ZodIssue[] }`.
-
-```typescript
-'use server'
-
-import { revalidatePath } from 'next/cache'
-import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
-import { systemSchema, type SystemInput } from '@/lib/validations/system'
-
-export async function createSystem(data: SystemInput) {
-  const session = await auth()
-  if (!session) throw new Error('Unauthorized')
-
-  const validated = systemSchema.safeParse(data)
-  if (!validated.success) {
-    return { error: 'Invalid input', issues: validated.error.issues }
-  }
-
-  try {
-    const system = await prisma.system.create({
-      data: { ...validated.data, createdById: session.user.id },
-    })
-    revalidatePath('/systems')
-    return { success: true, system }
-  } catch (error) {
-    console.error('Failed to create system:', error)
-    return { error: 'Failed to create system' }
-  }
-}
-```
+Place in `app/actions/`. Check auth first, throw `Error('Unauthorized')` if missing. Return `{ success: true, data }` or `{ error: string, issues?: ZodIssue[] }`. Always wrap Prisma calls in try/catch with `console.error()` logging. Use `revalidatePath()` after mutations.
 
 ### Error Handling & Database
 
@@ -162,6 +141,17 @@ export default async function SystemsPage({ searchParams }: SystemsPageProps) {
   const systems = await getFilteredSystems(params)
   return <SystemList systems={systems} />
 }
+
+// Dynamic route params:
+interface EditPageProps {
+  params: Promise<{ id: string }>
+}
+export default async function EditPage({ params }: EditPageProps) {
+  const { id } = await params
+  const item = await getItem(id)
+  if (!item) notFound()
+  return <EditForm item={item} />
+}
 ```
 
 ## Git Commits & Security
@@ -172,3 +162,27 @@ Conventional commits: `feat(diagrams): add signal flow`, `fix(auth): handle time
 - Validate all input with Zod schemas in `lib/validations/`
 - Always `await auth()` in server actions before data access
 - Restrict delete operations to ADMIN/EDITOR roles
+
+## Audit Logging
+
+All CRUD operations on major entities are logged via `lib/audit.ts`:
+
+```typescript
+import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
+
+await createAuditLog({
+  action: 'CREATE',
+  entityType: 'Device',
+  entityId: device.id,
+  userId: session.user.id,
+  changes: { after: sanitizeForAudit(data) },
+})
+```
+
+## Environment Variables
+
+Required: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
+
+Optional (syslog): `SYSLOG_UDP_PORT`, `SYSLOG_TCP_PORT`, `SYSLOG_HOST`
+
+Optional (snmp): `SNMP_DEFAULT_PORT`, `SNMP_DEFAULT_COMMUNITY`, `SNMP_POLL_INTERVAL`

@@ -446,7 +446,7 @@ volumes:
 - [x] Status dashboard (system health overview)
 - [x] Syslog receiver (UDP/TCP listener for device logs)
 - [x] Log viewer with filtering and search
-- [ ] Basic SNMP polling (optional)
+- [x] Basic SNMP polling (optional)
 - [ ] Uptime history tracking
 - [ ] Alert thresholds (email or webhook notifications)
 - [ ] Retention policies for logs

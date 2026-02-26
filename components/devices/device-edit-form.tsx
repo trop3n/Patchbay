@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { updateDevice } from '@/app/actions/devices'
 import { deviceTypeOptions } from '@/lib/validations/device'
 import type { Device, System } from '@prisma/client'
-import type { DeviceStatus } from '@prisma/client'
+import type { DeviceStatus, SnmpVersion } from '@prisma/client'
 
 interface DeviceEditFormProps {
   device: Device
@@ -31,11 +32,18 @@ const statusOptions: { value: DeviceStatus; label: string }[] = [
   { value: 'UNKNOWN', label: 'Unknown' },
 ]
 
+const snmpVersionOptions: { value: SnmpVersion; label: string }[] = [
+  { value: 'V1', label: 'SNMPv1' },
+  { value: 'V2C', label: 'SNMPv2c' },
+  { value: 'V3', label: 'SNMPv3' },
+]
+
 export function DeviceEditForm({ device, systems }: DeviceEditFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedSystemId, setSelectedSystemId] = useState<string>(device.systemId)
+  const [snmpEnabled, setSnmpEnabled] = useState(device.snmpEnabled)
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -53,6 +61,10 @@ export function DeviceEditForm({ device, systems }: DeviceEditFormProps) {
       model: formData.get('model') as string || null,
       status: formData.get('status') as DeviceStatus,
       systemId: selectedSystemId,
+      snmpEnabled,
+      snmpVersion: (formData.get('snmpVersion') as SnmpVersion) || null,
+      snmpCommunity: formData.get('snmpCommunity') as string || null,
+      snmpPort: parseInt(formData.get('snmpPort') as string, 10) || 161,
     })
 
     if (result.success) {
@@ -174,6 +186,60 @@ export function DeviceEditForm({ device, systems }: DeviceEditFormProps) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-4 rounded-lg border p-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="snmpEnabled"
+                checked={snmpEnabled}
+                onCheckedChange={(checked) => setSnmpEnabled(checked === true)}
+              />
+              <Label htmlFor="snmpEnabled" className="font-normal cursor-pointer">
+                Enable SNMP Monitoring
+              </Label>
+            </div>
+
+            {snmpEnabled && (
+              <div className="space-y-4 pt-2">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="snmpVersion">SNMP Version</Label>
+                    <Select name="snmpVersion" defaultValue={device.snmpVersion || 'V2C'}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {snmpVersionOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="snmpCommunity">Community String</Label>
+                    <Input
+                      id="snmpCommunity"
+                      name="snmpCommunity"
+                      placeholder="public"
+                      defaultValue={device.snmpCommunity || 'public'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="snmpPort">Port</Label>
+                    <Input
+                      id="snmpPort"
+                      name="snmpPort"
+                      type="number"
+                      placeholder="161"
+                      defaultValue={device.snmpPort || 161}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (

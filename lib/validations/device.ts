@@ -9,6 +9,10 @@ export const deviceSchema = z.object({
   model: z.string().max(100).optional().nullable(),
   status: z.enum(['ONLINE', 'OFFLINE', 'WARNING', 'ERROR', 'UNKNOWN']).optional(),
   systemId: z.string().cuid(),
+  snmpEnabled: z.boolean().optional(),
+  snmpVersion: z.enum(['V1', 'V2C', 'V3']).optional().nullable(),
+  snmpCommunity: z.string().max(100).optional().nullable(),
+  snmpPort: z.number().int().min(1).max(65535).optional(),
 })
 
 export const deviceUpdateSchema = deviceSchema.partial()

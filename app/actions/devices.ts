@@ -128,6 +128,10 @@ export async function createDevice(data: DeviceInput) {
         manufacturer: validated.data.manufacturer || null,
         model: validated.data.model || null,
         status: validated.data.status || 'UNKNOWN',
+        snmpEnabled: validated.data.snmpEnabled ?? false,
+        snmpVersion: validated.data.snmpVersion || null,
+        snmpCommunity: validated.data.snmpCommunity || null,
+        snmpPort: validated.data.snmpPort ?? 161,
         systemId: validated.data.systemId,
       },
     })
@@ -169,6 +173,10 @@ export async function updateDevice(id: string, data: DeviceUpdateInput) {
         manufacturer: validated.data.manufacturer,
         model: validated.data.model,
         status: validated.data.status,
+        snmpEnabled: validated.data.snmpEnabled,
+        snmpVersion: validated.data.snmpVersion,
+        snmpCommunity: validated.data.snmpCommunity,
+        snmpPort: validated.data.snmpPort,
         ...(validated.data.systemId && { system: { connect: { id: validated.data.systemId } } }),
       },
     })
