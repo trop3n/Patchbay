@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   Cpu,
+  File,
 } from 'lucide-react'
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/diagrams', label: 'Diagrams', icon: GitBranch },
   { href: '/assets', label: 'Assets', icon: Package },
   { href: '/devices', label: 'Devices', icon: Cpu },
+  { href: '/logs', label: 'Logs', icon: File },
   { href: '/racks', label: 'Racks', icon: Server },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]

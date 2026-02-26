@@ -20,6 +20,10 @@ npm test -- --testNamePattern="test name"   # Run tests matching name
 npx prisma generate          # Generate Prisma client
 npx prisma migrate dev       # Run migrations (development)
 npx prisma db seed           # Seed database
+
+# Syslog Server (optional)
+npm run syslog               # Start syslog receiver (requires root/sudo for port 514)
+npm run syslog:dev           # Start syslog on non-privileged ports (1514)
 ```
 
 ## Tech Stack

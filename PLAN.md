@@ -441,11 +441,11 @@ volumes:
 
 **Goal**: Monitoring and log aggregation
 
-- [ ] Device model and device list per system
-- [ ] Manual status updates for devices
-- [ ] Status dashboard (system health overview)
-- [ ] Syslog receiver (UDP/TCP listener for device logs)
-- [ ] Log viewer with filtering and search
+- [x] Device model and device list per system
+- [x] Manual status updates for devices
+- [x] Status dashboard (system health overview)
+- [x] Syslog receiver (UDP/TCP listener for device logs)
+- [x] Log viewer with filtering and search
 - [ ] Basic SNMP polling (optional)
 - [ ] Uptime history tracking
 - [ ] Alert thresholds (email or webhook notifications)
