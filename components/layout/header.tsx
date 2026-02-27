@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Search as SearchIcon } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 import type { AuthUser } from '@/types'
 
@@ -53,6 +54,7 @@ export function Header({ user }: HeaderProps) {
         </div>
       </form>
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <span className="text-sm text-muted-foreground hidden sm:block">{user.name || user.username}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

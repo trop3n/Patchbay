@@ -1,7 +1,16 @@
+import { ThemeToggle } from '@/components/theme-toggle'
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
+      {children}
+    </>
+  )
 }
