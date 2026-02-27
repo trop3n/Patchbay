@@ -32,14 +32,14 @@ export function ListFilter({
   const searchParams = useSearchParams()
 
   const currentSearch = searchParams.get('search') || ''
-  const currentStatus = searchParams.get('status') || ''
-  const currentCategory = searchParams.get('category') || ''
-  const currentSystemId = searchParams.get('systemId') || ''
-  const currentDeviceType = searchParams.get('deviceType') || ''
+  const currentStatus = searchParams.get('status') || undefined
+  const currentCategory = searchParams.get('category') || undefined
+  const currentSystemId = searchParams.get('systemId') || undefined
+  const currentDeviceType = searchParams.get('deviceType') || undefined
 
   function updateFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString())
-    if (value) {
+    if (value && value !== 'all') {
       params.set(key, value)
     } else {
       params.delete(key)
@@ -71,12 +71,12 @@ export function ListFilter({
       {statusOptions && (
         <div className="min-w-[150px]">
           <Label className="text-xs text-muted-foreground">Status</Label>
-          <Select value={currentStatus} onValueChange={(v) => updateFilter('status', v)}>
+          <Select value={currentStatus || 'all'} onValueChange={(v) => updateFilter('status', v)}>
             <SelectTrigger>
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="all">All statuses</SelectItem>
               {statusOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
@@ -90,12 +90,12 @@ export function ListFilter({
       {categoryOptions && categoryOptions.length > 0 && (
         <div className="min-w-[150px]">
           <Label className="text-xs text-muted-foreground">Category</Label>
-          <Select value={currentCategory} onValueChange={(v) => updateFilter('category', v)}>
+          <Select value={currentCategory || 'all'} onValueChange={(v) => updateFilter('category', v)}>
             <SelectTrigger>
               <SelectValue placeholder="All categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All categories</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {categoryOptions.map((cat) => (
                 <SelectItem key={cat} value={cat.toLowerCase()}>
                   {cat}
@@ -109,12 +109,12 @@ export function ListFilter({
       {systemOptions && systemOptions.length > 0 && (
         <div className="min-w-[180px]">
           <Label className="text-xs text-muted-foreground">System</Label>
-          <Select value={currentSystemId} onValueChange={(v) => updateFilter('systemId', v)}>
+          <Select value={currentSystemId || 'all'} onValueChange={(v) => updateFilter('systemId', v)}>
             <SelectTrigger>
               <SelectValue placeholder="All systems" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All systems</SelectItem>
+              <SelectItem value="all">All systems</SelectItem>
               {systemOptions.map((sys) => (
                 <SelectItem key={sys.id} value={sys.id}>
                   {sys.name}
@@ -128,12 +128,12 @@ export function ListFilter({
       {deviceTypeOptions && deviceTypeOptions.length > 0 && (
         <div className="min-w-[150px]">
           <Label className="text-xs text-muted-foreground">Device Type</Label>
-          <Select value={currentDeviceType} onValueChange={(v) => updateFilter('deviceType', v)}>
+          <Select value={currentDeviceType || 'all'} onValueChange={(v) => updateFilter('deviceType', v)}>
             <SelectTrigger>
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               {deviceTypeOptions.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
