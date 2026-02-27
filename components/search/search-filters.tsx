@@ -44,8 +44,8 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
   const [categories, setCategories] = useState<string[]>([])
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [selectedStatus, setSelectedStatus] = useState<string[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [selectedSystemId, setSelectedSystemId] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedSystemId, setSelectedSystemId] = useState<string>('all')
 
   useEffect(() => {
     getSearchOptions().then((options) => {
@@ -55,8 +55,8 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
 
     const types = searchParams.get('types')?.split(',').filter(Boolean) || []
     const status = searchParams.get('status')?.split(',').filter(Boolean) || []
-    const category = searchParams.get('category') || ''
-    const systemId = searchParams.get('systemId') || ''
+    const category = searchParams.get('category') || 'all'
+    const systemId = searchParams.get('systemId') || 'all'
 
     setSelectedTypes(types)
     setSelectedStatus(status)
@@ -93,13 +93,13 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
       params.delete('status')
     }
     
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== 'all') {
       params.set('category', selectedCategory)
     } else {
       params.delete('category')
     }
     
-    if (selectedSystemId) {
+    if (selectedSystemId && selectedSystemId !== 'all') {
       params.set('systemId', selectedSystemId)
     } else {
       params.delete('systemId')
@@ -110,8 +110,8 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
     onFiltersChange?.({
       types: selectedTypes as SearchFilters['types'],
       status: selectedStatus.length > 0 ? selectedStatus : undefined,
-      category: selectedCategory || undefined,
-      systemId: selectedSystemId || undefined,
+      category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      systemId: selectedSystemId !== 'all' ? selectedSystemId : undefined,
     })
     
     setIsOpen(false)
@@ -120,8 +120,8 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
   function clearFilters() {
     setSelectedTypes([])
     setSelectedStatus([])
-    setSelectedCategory('')
-    setSelectedSystemId('')
+    setSelectedCategory('all')
+    setSelectedSystemId('all')
     
     const params = new URLSearchParams(searchParams.toString())
     params.delete('types')
@@ -138,8 +138,8 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
   const activeFilterCount = 
     selectedTypes.length + 
     selectedStatus.length + 
-    (selectedCategory ? 1 : 0) + 
-    (selectedSystemId ? 1 : 0)
+    (selectedCategory && selectedCategory !== 'all' ? 1 : 0) + 
+    (selectedSystemId && selectedSystemId !== 'all' ? 1 : 0)
 
   return (
     <div className="space-y-4">
@@ -211,7 +211,7 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All categories</SelectItem>
+                    <SelectItem value="all">All categories</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat}
@@ -229,7 +229,7 @@ export function SearchFiltersPanel({ onFiltersChange }: SearchFiltersProps) {
                   <SelectValue placeholder="All systems" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All systems</SelectItem>
+                  <SelectItem value="all">All systems</SelectItem>
                   {systems.map((system) => (
                     <SelectItem key={system.id} value={system.id}>
                       {system.name}
