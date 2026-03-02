@@ -26,7 +26,7 @@ interface CreateAuditLogInput {
 
 export async function createAuditLog(input: CreateAuditLogInput) {
   try {
-    return prisma.auditLog.create({
+    return await prisma.auditLog.create({
       data: {
         action: input.action,
         entityType: input.entityType,
@@ -40,9 +40,23 @@ export async function createAuditLog(input: CreateAuditLogInput) {
   }
 }
 
+const SENSITIVE_FIELDS = new Set([
+  'password',
+  'hashedPassword',
+  'snmpCommunity',
+  'webhookUrl',
+  'smtpPass',
+  'secret',
+  'token',
+  'apiKey',
+])
+
 export function sanitizeForAudit(data: Record<string, unknown>): Record<string, unknown> {
   const sanitized = { ...data }
-  delete sanitized.password
-  delete sanitized.hashedPassword
+  for (const key of Object.keys(sanitized)) {
+    if (SENSITIVE_FIELDS.has(key)) {
+      sanitized[key] = '[REDACTED]'
+    }
+  }
   return sanitized
 }

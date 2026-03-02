@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog } from '@/lib/audit'
+import { createUserSchema, resetPasswordSchema } from '@/lib/validations/user'
 import type { Role } from '@prisma/client'
 
 export async function getUsers() {
@@ -108,7 +109,7 @@ export async function toggleUserActive(userId: string) {
   }
 }
 
-export async function createUser(data: { email: string; username: string; name?: string; password: string; role?: Role }) {
+export async function createUser(data: unknown) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
@@ -116,17 +117,22 @@ export async function createUser(data: { email: string; username: string; name?:
     return { error: 'Insufficient permissions' }
   }
 
+  const validated = createUserSchema.safeParse(data)
+  if (!validated.success) {
+    return { error: validated.error.errors.map((e) => e.message).join(', ') }
+  }
+
   const { hash } = await import('bcryptjs')
-  const hashedPassword = await hash(data.password, 10)
+  const hashedPassword = await hash(validated.data.password, 10)
 
   try {
     const user = await prisma.user.create({
       data: {
-        email: data.email,
-        username: data.username,
-        name: data.name,
+        email: validated.data.email,
+        username: validated.data.username,
+        name: validated.data.name,
         password: hashedPassword,
-        role: data.role || 'VIEWER',
+        role: validated.data.role ?? 'VIEWER',
       },
       select: { id: true, name: true, username: true, email: true, role: true },
     })
@@ -135,7 +141,7 @@ export async function createUser(data: { email: string; username: string; name?:
       entityType: 'User',
       entityId: user.id,
       userId: session.user.id,
-      changes: { after: { email: data.email, username: data.username, name: data.name, role: data.role || 'VIEWER' } },
+      changes: { after: { email: validated.data.email, username: validated.data.username, name: validated.data.name, role: validated.data.role ?? 'VIEWER' } },
     })
     revalidatePath('/settings')
     return { success: true, user }
@@ -153,8 +159,13 @@ export async function resetUserPassword(userId: string, newPassword: string) {
     return { error: 'Insufficient permissions' }
   }
 
+  const validated = resetPasswordSchema.safeParse({ newPassword })
+  if (!validated.success) {
+    return { error: validated.error.errors.map((e) => e.message).join(', ') }
+  }
+
   const { hash } = await import('bcryptjs')
-  const hashedPassword = await hash(newPassword, 10)
+  const hashedPassword = await hash(validated.data.newPassword, 10)
 
   try {
     await prisma.user.update({

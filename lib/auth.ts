@@ -80,11 +80,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
         token.username = user.username
         token.role = user.role
+        token.lastVerified = Date.now()
       }
+
+      // Re-validate role and active status from DB every 5 minutes
+      const REVALIDATION_INTERVAL = 5 * 60 * 1000
+      const lastVerified = (token.lastVerified as number) || 0
+      if (Date.now() - lastVerified > REVALIDATION_INTERVAL) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { role: true, isActive: true, username: true },
+          })
+
+          if (!dbUser || !dbUser.isActive) {
+            // Return empty token to force sign-out
+            return { ...token, id: '', role: 'VIEWER' as const, invalidated: true }
+          }
+
+          token.role = dbUser.role
+          token.username = dbUser.username
+          token.lastVerified = Date.now()
+        } catch {
+          // If DB is unreachable, keep existing token to avoid locking everyone out
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
       if (token) {
+        if (token.invalidated) {
+          // Force the session to appear invalid so the user gets redirected
+          session.user.id = ''
+          return session
+        }
         session.user.id = token.id
         session.user.username = token.username
         session.user.role = token.role

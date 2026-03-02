@@ -4,24 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
-import type { AlertCondition, AlertSeverity } from '@prisma/client'
-
-export interface AlertThresholdInput {
-  name: string
-  description?: string
-  condition: AlertCondition
-  severity: AlertSeverity
-  threshold?: number
-  thresholdUnit?: string
-  enabled: boolean
-  notifyEmail: boolean
-  notifyWebhook: boolean
-  webhookUrl?: string
-  emailRecipients?: string
-  systemId?: string
-  deviceId?: string
-  [key: string]: unknown
-}
+import { alertThresholdSchema, alertThresholdUpdateSchema } from '@/lib/validations/alert'
 
 export async function getAlertThresholds() {
   const session = await auth()
@@ -52,7 +35,7 @@ export async function getAlertThreshold(id: string) {
   })
 }
 
-export async function createAlertThreshold(data: AlertThresholdInput) {
+export async function createAlertThreshold(data: unknown) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
@@ -60,22 +43,27 @@ export async function createAlertThreshold(data: AlertThresholdInput) {
     return { error: 'Insufficient permissions' }
   }
 
+  const validated = alertThresholdSchema.safeParse(data)
+  if (!validated.success) {
+    return { error: validated.error.errors.map((e) => e.message).join(', ') }
+  }
+
   try {
     const threshold = await prisma.alertThreshold.create({
       data: {
-        name: data.name,
-        description: data.description || null,
-        condition: data.condition,
-        severity: data.severity,
-        threshold: data.threshold || null,
-        thresholdUnit: data.thresholdUnit || null,
-        enabled: data.enabled,
-        notifyEmail: data.notifyEmail,
-        notifyWebhook: data.notifyWebhook,
-        webhookUrl: data.webhookUrl || null,
-        emailRecipients: data.emailRecipients || null,
-        systemId: data.systemId || null,
-        deviceId: data.deviceId || null,
+        name: validated.data.name,
+        description: validated.data.description ?? null,
+        condition: validated.data.condition,
+        severity: validated.data.severity,
+        threshold: validated.data.threshold ?? null,
+        thresholdUnit: validated.data.thresholdUnit ?? null,
+        enabled: validated.data.enabled,
+        notifyEmail: validated.data.notifyEmail,
+        notifyWebhook: validated.data.notifyWebhook,
+        webhookUrl: validated.data.webhookUrl ?? null,
+        emailRecipients: validated.data.emailRecipients ?? null,
+        systemId: validated.data.systemId ?? null,
+        deviceId: validated.data.deviceId ?? null,
         createdById: session.user.id,
       },
     })
@@ -85,7 +73,7 @@ export async function createAlertThreshold(data: AlertThresholdInput) {
       entityType: 'AlertThreshold',
       entityId: threshold.id,
       userId: session.user.id,
-      changes: { after: sanitizeForAudit(data) },
+      changes: { after: sanitizeForAudit(validated.data as Record<string, unknown>) },
     })
 
     revalidatePath('/settings/alerts')
@@ -96,12 +84,17 @@ export async function createAlertThreshold(data: AlertThresholdInput) {
   }
 }
 
-export async function updateAlertThreshold(id: string, data: Partial<AlertThresholdInput>) {
+export async function updateAlertThreshold(id: string, data: unknown) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
   if (session.user.role !== 'ADMIN' && session.user.role !== 'EDITOR') {
     return { error: 'Insufficient permissions' }
+  }
+
+  const validated = alertThresholdUpdateSchema.safeParse(data)
+  if (!validated.success) {
+    return { error: validated.error.errors.map((e) => e.message).join(', ') }
   }
 
   try {
@@ -110,19 +103,19 @@ export async function updateAlertThreshold(id: string, data: Partial<AlertThresh
     const threshold = await prisma.alertThreshold.update({
       where: { id },
       data: {
-        name: data.name,
-        description: data.description,
-        condition: data.condition,
-        severity: data.severity,
-        threshold: data.threshold,
-        thresholdUnit: data.thresholdUnit,
-        enabled: data.enabled,
-        notifyEmail: data.notifyEmail,
-        notifyWebhook: data.notifyWebhook,
-        webhookUrl: data.webhookUrl,
-        emailRecipients: data.emailRecipients,
-        systemId: data.systemId,
-        deviceId: data.deviceId,
+        name: validated.data.name,
+        description: validated.data.description,
+        condition: validated.data.condition,
+        severity: validated.data.severity,
+        threshold: validated.data.threshold,
+        thresholdUnit: validated.data.thresholdUnit,
+        enabled: validated.data.enabled,
+        notifyEmail: validated.data.notifyEmail,
+        notifyWebhook: validated.data.notifyWebhook,
+        webhookUrl: validated.data.webhookUrl,
+        emailRecipients: validated.data.emailRecipients,
+        systemId: validated.data.systemId,
+        deviceId: validated.data.deviceId,
       },
     })
 
@@ -131,7 +124,7 @@ export async function updateAlertThreshold(id: string, data: Partial<AlertThresh
       entityType: 'AlertThreshold',
       entityId: threshold.id,
       userId: session.user.id,
-      changes: { before: before ? sanitizeForAudit(before) : undefined, after: sanitizeForAudit(data) },
+      changes: { before: before ? sanitizeForAudit(before) : undefined, after: sanitizeForAudit(validated.data as Record<string, unknown>) },
     })
 
     revalidatePath('/settings/alerts')
@@ -180,7 +173,7 @@ export async function getAlerts(options?: {
   return prisma.alert.findMany({
     where: options?.status ? { status: options.status } : undefined,
     orderBy: { createdAt: 'desc' },
-    take: options?.limit || 50,
+    take: options?.limit ?? 50,
     include: {
       threshold: { select: { id: true, name: true, condition: true } },
       device: { select: { id: true, name: true } },
