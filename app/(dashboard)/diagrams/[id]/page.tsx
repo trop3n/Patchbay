@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getDiagram } from '@/app/actions/diagrams'
+import { getDiagram, getDiagramVersions } from '@/app/actions/diagrams'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Edit, Calendar, User, Folder } from 'lucide-react'
 import { DeleteDiagramButton } from '@/components/diagrams/delete-diagram-button'
 import { DiagramViewer } from '@/components/diagrams/diagram-viewer'
+import { DiagramVersionHistory } from '@/components/diagrams/diagram-version-history'
 
 interface DiagramDetailPageProps {
   params: Promise<{ id: string }>
@@ -21,7 +22,10 @@ const typeLabels: Record<string, string> = {
 
 export default async function DiagramDetailPage({ params }: DiagramDetailPageProps) {
   const { id } = await params
-  const diagram = await getDiagram(id)
+  const [diagram, versions] = await Promise.all([
+    getDiagram(id),
+    getDiagramVersions(id),
+  ])
 
   if (!diagram) {
     notFound()
@@ -57,6 +61,11 @@ export default async function DiagramDetailPage({ params }: DiagramDetailPagePro
               Edit
             </Link>
           </Button>
+          <DiagramVersionHistory
+            diagramId={diagram.id}
+            diagramType={diagram.type as 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'}
+            versions={versions}
+          />
           <DeleteDiagramButton diagramId={diagram.id} diagramTitle={diagram.title} />
         </div>
       </div>

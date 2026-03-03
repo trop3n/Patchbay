@@ -102,6 +102,30 @@ export async function updateDiagram(id: string, input: UpdateDiagramInput) {
 
   try {
     const before = await prisma.diagram.findUnique({ where: { id } })
+
+    // Snapshot the current state before updating
+    if (before) {
+      await prisma.diagramVersion.create({
+        data: {
+          diagramId: id,
+          title: before.title,
+          data: before.data as object,
+          savedById: session.user.id,
+        },
+      })
+      // Prune to keep max 50 versions per diagram
+      const count = await prisma.diagramVersion.count({ where: { diagramId: id } })
+      if (count > 50) {
+        const oldest = await prisma.diagramVersion.findMany({
+          where: { diagramId: id },
+          orderBy: { createdAt: 'asc' },
+          take: count - 50,
+          select: { id: true },
+        })
+        await prisma.diagramVersion.deleteMany({ where: { id: { in: oldest.map((v) => v.id) } } })
+      }
+    }
+
     const diagram = await prisma.diagram.update({
       where: { id },
       data: {
@@ -128,6 +152,86 @@ export async function updateDiagram(id: string, input: UpdateDiagramInput) {
   } catch (error) {
     console.error('Failed to update diagram:', error)
     return { error: 'Failed to update diagram' }
+  }
+}
+
+export async function getDiagramVersions(diagramId: string) {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  return prisma.diagramVersion.findMany({
+    where: { diagramId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      savedBy: { select: { name: true, username: true } },
+    },
+  })
+}
+
+export async function getDiagramVersion(versionId: string) {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  return prisma.diagramVersion.findUnique({
+    where: { id: versionId },
+    select: {
+      id: true,
+      title: true,
+      data: true,
+      createdAt: true,
+      savedBy: { select: { name: true, username: true } },
+    },
+  })
+}
+
+export async function restoreDiagramVersion(versionId: string) {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
+
+  try {
+    const version = await prisma.diagramVersion.findUnique({ where: { id: versionId } })
+    if (!version) return { error: 'Version not found' }
+
+    const current = await prisma.diagram.findUnique({ where: { id: version.diagramId } })
+    if (!current) return { error: 'Diagram not found' }
+
+    // Snapshot current state as an undo point before restoring
+    await prisma.diagramVersion.create({
+      data: {
+        diagramId: current.id,
+        title: current.title,
+        data: current.data as object,
+        savedById: session.user.id,
+      },
+    })
+
+    // Prune to keep max 50 versions per diagram
+    const count = await prisma.diagramVersion.count({ where: { diagramId: current.id } })
+    if (count > 50) {
+      const oldest = await prisma.diagramVersion.findMany({
+        where: { diagramId: current.id },
+        orderBy: { createdAt: 'asc' },
+        take: count - 50,
+        select: { id: true },
+      })
+      await prisma.diagramVersion.deleteMany({ where: { id: { in: oldest.map((v) => v.id) } } })
+    }
+
+    await prisma.diagram.update({
+      where: { id: current.id },
+      data: { data: version.data as object },
+    })
+
+    revalidatePath(`/diagrams/${current.id}`)
+    revalidatePath('/diagrams')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to restore diagram version:', error)
+    return { error: 'Failed to restore diagram version' }
   }
 }
 

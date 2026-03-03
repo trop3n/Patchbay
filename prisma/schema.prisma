@@ -76,13 +76,14 @@ model User {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  systems        System[]
-  diagrams       Diagram[]
-  documents      Document[]
-  assets         Asset[]
-  racks          Rack[]
-  auditLogs      AuditLog[]
-  attachments    Attachment[]
+  systems         System[]
+  diagrams        Diagram[]
+  diagramVersions DiagramVersion[]
+  documents       Document[]
+  assets          Asset[]
+  racks           Rack[]
+  auditLogs       AuditLog[]
+  attachments     Attachment[]
   alertThresholds AlertThreshold[]
 
   @@map("users")
@@ -128,7 +129,23 @@ model Diagram {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
+  versions     DiagramVersion[]
+
   @@map("diagrams")
+}
+
+model DiagramVersion {
+  id        String   @id @default(cuid())
+  diagramId String
+  diagram   Diagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  title     String
+  data      Json
+  savedById String
+  savedBy   User     @relation(fields: [savedById], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([diagramId, createdAt])
+  @@map("diagram_versions")
 }
 
 model Document {
