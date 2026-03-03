@@ -5,15 +5,29 @@ import { parseSyslogMessage, getLogLevelFromSeverity } from '../lib/syslog/parse
 import { syslogConfig } from '../lib/syslog/config'
 import { recordDeviceStatusChange } from '../lib/uptime'
 
-interface DeviceCache {
-  [ip: string]: string
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const CACHE_MAX_SIZE = 1000
+
+interface CacheEntry {
+  deviceId: string
+  expiresAt: number
 }
 
-const deviceCache: DeviceCache = {}
+const deviceCache = new Map<string, CacheEntry>()
+
+function evictExpiredCache() {
+  const now = Date.now()
+  for (const [key, entry] of deviceCache) {
+    if (entry.expiresAt <= now) {
+      deviceCache.delete(key)
+    }
+  }
+}
 
 async function getDeviceIdByIp(ip: string): Promise<string | null> {
-  if (deviceCache[ip]) {
-    return deviceCache[ip]
+  const cached = deviceCache.get(ip)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.deviceId
   }
 
   try {
@@ -23,7 +37,22 @@ async function getDeviceIdByIp(ip: string): Promise<string | null> {
     })
 
     if (device) {
-      deviceCache[ip] = device.id
+      // Evict old entries if cache is too large
+      if (deviceCache.size >= CACHE_MAX_SIZE) {
+        evictExpiredCache()
+        // If still too large after eviction, clear oldest half
+        if (deviceCache.size >= CACHE_MAX_SIZE) {
+          const keys = [...deviceCache.keys()]
+          for (let i = 0; i < keys.length / 2; i++) {
+            deviceCache.delete(keys[i])
+          }
+        }
+      }
+
+      deviceCache.set(ip, {
+        deviceId: device.id,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      })
       return device.id
     }
   } catch (error) {
@@ -102,6 +131,8 @@ function createUdpServer(config: typeof syslogConfig) {
   return server
 }
 
+const MAX_TCP_BUFFER_SIZE = 64 * 1024 // 64KB per connection
+
 function createTcpServer(config: typeof syslogConfig) {
   const server = net.createServer((socket) => {
     const clientIp = socket.remoteAddress || 'unknown'
@@ -111,6 +142,13 @@ function createTcpServer(config: typeof syslogConfig) {
 
     socket.on('data', async (data) => {
       buffer += data.toString('utf8')
+
+      // Protect against unbounded buffer growth
+      if (buffer.length > MAX_TCP_BUFFER_SIZE) {
+        console.warn(`[Syslog TCP] Buffer overflow from ${clientIp}, dropping data`)
+        buffer = ''
+        return
+      }
 
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''

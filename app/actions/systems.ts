@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { systemSchema, type SystemInput } from '@/lib/validations/system'
 import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
+import { canWrite } from '@/lib/authorize'
 import type { SystemStatus } from '@prisma/client'
 
 export async function getSystems() {
@@ -110,6 +111,7 @@ export async function getSystem(id: string) {
 export async function createSystem(data: SystemInput) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = systemSchema.safeParse(data)
   if (!validated.success) {
@@ -141,6 +143,7 @@ export async function createSystem(data: SystemInput) {
 export async function updateSystem(id: string, data: Partial<SystemInput>) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = systemSchema.partial().safeParse(data)
   if (!validated.success) {

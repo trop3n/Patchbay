@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { documentSchema, type DocumentInput } from '@/lib/validations/document'
 import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
+import { canWrite } from '@/lib/authorize'
 
 export async function getDocuments(systemId?: string) {
   const session = await auth()
@@ -40,6 +41,7 @@ export async function getDocument(id: string) {
 export async function createDocument(data: DocumentInput) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = documentSchema.safeParse(data)
   if (!validated.success) {
@@ -74,6 +76,7 @@ export async function createDocument(data: DocumentInput) {
 export async function updateDocument(id: string, data: Partial<DocumentInput>) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = documentSchema.partial().safeParse(data)
   if (!validated.success) {

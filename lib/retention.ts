@@ -12,16 +12,23 @@ export async function getRetentionPolicy() {
   let policy = await prisma.retentionPolicy.findFirst()
 
   if (!policy) {
-    policy = await prisma.retentionPolicy.create({
-      data: {
-        name: 'Default Policy',
-        deviceLogRetentionDays: 30,
-        statusHistoryRetentionDays: 90,
-        alertRetentionDays: 30,
-        resolvedAlertRetentionDays: 7,
-        enabled: true,
-      },
-    })
+    // Use try/catch to handle concurrent creation race condition
+    try {
+      policy = await prisma.retentionPolicy.create({
+        data: {
+          name: 'Default Policy',
+          deviceLogRetentionDays: 30,
+          statusHistoryRetentionDays: 90,
+          alertRetentionDays: 30,
+          resolvedAlertRetentionDays: 7,
+          enabled: true,
+        },
+      })
+    } catch {
+      // Another request created it first — just fetch it
+      policy = await prisma.retentionPolicy.findFirst()
+      if (!policy) throw new Error('Failed to create or find retention policy')
+    }
   }
 
   return policy

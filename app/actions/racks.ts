@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog } from '@/lib/audit'
+import { canWrite } from '@/lib/authorize'
 import { rackSchema, rackUpdateSchema } from '@/lib/validations/rack'
 
 export interface RackUnit {
@@ -45,6 +46,7 @@ export async function getRack(id: string) {
 export async function createRack(data: unknown) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = rackSchema.safeParse(data)
   if (!validated.success) {
@@ -83,6 +85,7 @@ export async function createRack(data: unknown) {
 export async function updateRack(id: string, data: unknown) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = rackUpdateSchema.safeParse(data)
   if (!validated.success) {

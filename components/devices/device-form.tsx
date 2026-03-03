@@ -203,8 +203,9 @@ export function DeviceForm({ systems, systemId }: DeviceFormProps) {
                     <Input
                       id="snmpCommunity"
                       name="snmpCommunity"
-                      placeholder="public"
-                      defaultValue="public"
+                      type="password"
+                      autoComplete="off"
+                      placeholder="Enter community string"
                     />
                   </div>
                   <div className="space-y-2">

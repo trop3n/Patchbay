@@ -150,45 +150,47 @@ export async function getSystemUptimeSummary(
 
   if (!system) return null
 
-  const devices = await prisma.device.findMany({
-    where: { systemId },
-    select: {
-      id: true,
-      name: true,
-      status: true,
-      lastSeenAt: true,
-    },
-  })
-
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  const deviceStats = await Promise.all(
-    devices.map(async (device) => {
-      const history = await prisma.deviceStatusHistory.count({
-        where: {
-          deviceId: device.id,
-          recordedAt: { gte: startDate },
-          status: 'ONLINE',
-        },
-      })
+  const [devices, historyGroups] = await Promise.all([
+    prisma.device.findMany({
+      where: { systemId },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        lastSeenAt: true,
+      },
+    }),
+    prisma.deviceStatusHistory.groupBy({
+      by: ['deviceId', 'status'],
+      where: {
+        device: { systemId },
+        recordedAt: { gte: startDate },
+      },
+      _count: true,
+    }),
+  ])
 
-      const totalHistory = await prisma.deviceStatusHistory.count({
-        where: {
-          deviceId: device.id,
-          recordedAt: { gte: startDate },
-        },
-      })
+  const uptimeMap = new Map<string, { online: number; total: number }>()
+  for (const group of historyGroups) {
+    const entry = uptimeMap.get(group.deviceId) ?? { online: 0, total: 0 }
+    entry.total += group._count
+    if (group.status === 'ONLINE') entry.online += group._count
+    uptimeMap.set(group.deviceId, entry)
+  }
 
-      return {
-        id: device.id,
-        name: device.name,
-        status: device.status,
-        uptimePercentage: totalHistory > 0 ? (history / totalHistory) * 100 : 0,
-        lastSeenAt: device.lastSeenAt,
-      }
-    })
-  )
+  const deviceStats = devices.map((device) => {
+    const counts = uptimeMap.get(device.id) ?? { online: 0, total: 0 }
+    return {
+      id: device.id,
+      name: device.name,
+      status: device.status,
+      uptimePercentage: counts.total > 0 ? (counts.online / counts.total) * 100 : 0,
+      lastSeenAt: device.lastSeenAt,
+    }
+  })
 
   const onlineDevices = deviceStats.filter((d) => d.status === 'ONLINE').length
   const offlineDevices = deviceStats.filter((d) => d.status === 'OFFLINE').length
@@ -214,48 +216,46 @@ export async function getAllDevicesUptime(days: number = 30) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
-  const devices = await prisma.device.findMany({
-    select: {
-      id: true,
-      name: true,
-      status: true,
-      lastSeenAt: true,
-      system: { select: { id: true, name: true } },
-    },
-    orderBy: { name: 'asc' },
-  })
-
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  const stats = await Promise.all(
-    devices.map(async (device) => {
-      const onlineCount = await prisma.deviceStatusHistory.count({
-        where: {
-          deviceId: device.id,
-          recordedAt: { gte: startDate },
-          status: 'ONLINE',
-        },
-      })
+  const [devices, historyGroups] = await Promise.all([
+    prisma.device.findMany({
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        lastSeenAt: true,
+        system: { select: { id: true, name: true } },
+      },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.deviceStatusHistory.groupBy({
+      by: ['deviceId', 'status'],
+      where: { recordedAt: { gte: startDate } },
+      _count: true,
+    }),
+  ])
 
-      const totalCount = await prisma.deviceStatusHistory.count({
-        where: {
-          deviceId: device.id,
-          recordedAt: { gte: startDate },
-        },
-      })
+  // Build lookup: deviceId -> { online, total }
+  const uptimeMap = new Map<string, { online: number; total: number }>()
+  for (const group of historyGroups) {
+    const entry = uptimeMap.get(group.deviceId) ?? { online: 0, total: 0 }
+    entry.total += group._count
+    if (group.status === 'ONLINE') entry.online += group._count
+    uptimeMap.set(group.deviceId, entry)
+  }
 
-      return {
-        id: device.id,
-        name: device.name,
-        status: device.status,
-        lastSeenAt: device.lastSeenAt,
-        system: device.system,
-        uptimePercentage: totalCount > 0 ? (onlineCount / totalCount) * 100 : 0,
-        totalChecks: totalCount,
-      }
-    })
-  )
-
-  return stats
+  return devices.map((device) => {
+    const counts = uptimeMap.get(device.id) ?? { online: 0, total: 0 }
+    return {
+      id: device.id,
+      name: device.name,
+      status: device.status,
+      lastSeenAt: device.lastSeenAt,
+      system: device.system,
+      uptimePercentage: counts.total > 0 ? (counts.online / counts.total) * 100 : 0,
+      totalChecks: counts.total,
+    }
+  })
 }

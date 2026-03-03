@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { DeviceStatus } from '@prisma/client'
+import { deviceStatusColors, deviceStatusBadgeVariants } from '@/lib/device-status'
 
 interface DeviceUptimeStatsProps {
   stats: {
@@ -28,21 +29,8 @@ interface DeviceUptimeStatsProps {
   } | null
 }
 
-const statusColors: Record<DeviceStatus, string> = {
-  ONLINE: 'bg-green-500',
-  OFFLINE: 'bg-gray-500',
-  WARNING: 'bg-yellow-500',
-  ERROR: 'bg-red-500',
-  UNKNOWN: 'bg-gray-400',
-}
-
-const statusBadgeVariants: Record<DeviceStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  ONLINE: 'default',
-  OFFLINE: 'secondary',
-  WARNING: 'outline',
-  ERROR: 'destructive',
-  UNKNOWN: 'outline',
-}
+const statusColors = deviceStatusColors
+const statusBadgeVariants = deviceStatusBadgeVariants
 
 function formatUptime(percentage: number): string {
   return `${percentage.toFixed(1)}%`

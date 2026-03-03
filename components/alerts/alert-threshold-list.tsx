@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Edit, Trash2, CheckCircle } from 'lucide-react'
+import { deleteAlertThreshold } from '@/app/actions/alerts'
 import type { AlertCondition, AlertSeverity } from '@prisma/client'
 
 interface AlertThreshold {
@@ -50,18 +53,29 @@ const severityColors: Record<AlertSeverity, string> = {
 }
 
 export function AlertThresholdList({ thresholds }: AlertThresholdListProps) {
+  const router = useRouter()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function handleDelete() {
     if (!deleteId) return
     setIsDeleting(true)
-    const res = await fetch('/api/alerts/thresholds/' + deleteId, { method: 'DELETE' })
-    if (res.ok) {
-      setDeleteId(null)
-      window.location.reload()
+    setDeleteError(null)
+
+    try {
+      const result = await deleteAlertThreshold(deleteId)
+      if ('error' in result) {
+        setDeleteError(result.error)
+      } else {
+        setDeleteId(null)
+        router.refresh()
+      }
+    } catch {
+      setDeleteError('Failed to delete alert threshold')
+    } finally {
+      setIsDeleting(false)
     }
-    setIsDeleting(false)
   }
 
   if (thresholds.length === 0) {
@@ -128,12 +142,14 @@ export function AlertThresholdList({ thresholds }: AlertThresholdListProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="w-4 h-4" />
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/settings/alerts/${threshold.id}/edit`} aria-label={`Edit ${threshold.name}`}>
+                    <Edit className="w-4 h-4" />
+                  </Link>
                 </Button>
-                <Dialog open={deleteId === threshold.id} onOpenChange={(open) => setDeleteId(open ? threshold.id : null)}>
+                <Dialog open={deleteId === threshold.id} onOpenChange={(open) => { setDeleteId(open ? threshold.id : null); setDeleteError(null) }}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-destructive">
+                    <Button variant="outline" size="sm" className="text-destructive" aria-label={`Delete ${threshold.name}`}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </DialogTrigger>
@@ -144,6 +160,9 @@ export function AlertThresholdList({ thresholds }: AlertThresholdListProps) {
                         Are you sure you want to delete &ldquo;{threshold.name}&rdquo;? This action cannot be undone.
                       </DialogDescription>
                     </DialogHeader>
+                    {deleteError && (
+                      <p className="text-sm text-destructive">{deleteError}</p>
+                    )}
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setDeleteId(null)}>
                         Cancel

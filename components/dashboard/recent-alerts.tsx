@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Clock } from 'lucide-react'
 import { formatDistanceToNow } from '@/lib/utils'
 import type { DeviceStatus } from '@prisma/client'
+import { deviceStatusColors, deviceStatusLabels } from '@/lib/device-status'
 
 interface RecentAlert {
   id: string
@@ -21,21 +22,8 @@ interface RecentAlertsProps {
   alerts: RecentAlert[]
 }
 
-const statusColors: Record<DeviceStatus, string> = {
-  ONLINE: 'bg-green-500',
-  OFFLINE: 'bg-red-500',
-  WARNING: 'bg-yellow-500',
-  ERROR: 'bg-orange-500',
-  UNKNOWN: 'bg-gray-500',
-}
-
-const statusLabels: Record<DeviceStatus, string> = {
-  ONLINE: 'Online',
-  OFFLINE: 'Offline',
-  WARNING: 'Warning',
-  ERROR: 'Error',
-  UNKNOWN: 'Unknown',
-}
+const statusColors = deviceStatusColors
+const statusLabels = deviceStatusLabels
 
 export function RecentAlerts({ alerts }: RecentAlertsProps) {
   if (alerts.length === 0) {

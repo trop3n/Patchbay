@@ -40,6 +40,10 @@ export async function getDeviceLogs(
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
+  const timestamp: { gte?: Date; lte?: Date } = {}
+  if (filters.startDate) timestamp.gte = filters.startDate
+  if (filters.endDate) timestamp.lte = filters.endDate
+
   const where = {
     ...(filters.deviceId && { deviceId: filters.deviceId }),
     ...(filters.level && { level: filters.level }),
@@ -50,8 +54,7 @@ export async function getDeviceLogs(
         { rawLog: { contains: filters.search, mode: 'insensitive' as const } },
       ],
     }),
-    ...(filters.startDate && { timestamp: { gte: filters.startDate } }),
-    ...(filters.endDate && { timestamp: { lte: filters.endDate } }),
+    ...(Object.keys(timestamp).length > 0 && { timestamp }),
   }
 
   const [logs, total] = await Promise.all([

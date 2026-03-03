@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
+import { canWrite } from '@/lib/authorize'
 import { alertThresholdSchema, alertThresholdUpdateSchema } from '@/lib/validations/alert'
 
 export async function getAlertThresholds() {
@@ -185,6 +186,7 @@ export async function getAlerts(options?: {
 export async function acknowledgeAlert(id: string) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   try {
     const alert = await prisma.alert.update({
@@ -207,6 +209,7 @@ export async function acknowledgeAlert(id: string) {
 export async function resolveAlert(id: string) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   try {
     const alert = await prisma.alert.update({
@@ -228,6 +231,7 @@ export async function resolveAlert(id: string) {
 export async function resolveAllAlerts() {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   try {
     const result = await prisma.alert.updateMany({

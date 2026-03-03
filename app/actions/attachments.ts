@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { saveFile, deleteFile, ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '@/lib/storage'
+import { canWrite } from '@/lib/authorize'
 
 export async function getAttachments(params: { systemId?: string; documentId?: string }) {
   const session = await auth()
@@ -39,6 +40,7 @@ export async function uploadAttachment(
 ): Promise<{ success: true; attachment: unknown } | { error: string }> {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const file = formData.get('file') as File
   const systemId = formData.get('systemId') as string | null

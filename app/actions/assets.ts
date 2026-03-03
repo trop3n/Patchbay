@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { assetSchema } from '@/lib/validations/asset'
 import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
+import { canWrite } from '@/lib/authorize'
 import type { AssetStatus } from '@prisma/client'
 
 export async function getAssets(systemId?: string) {
@@ -110,6 +111,7 @@ interface CreateAssetInput {
 export async function createAsset(data: CreateAssetInput) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = assetSchema.safeParse(data)
   if (!validated.success) {
@@ -159,6 +161,7 @@ interface UpdateAssetInput {
 export async function updateAsset(id: string, data: UpdateAssetInput) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = assetSchema.partial().safeParse(data)
   if (!validated.success) {

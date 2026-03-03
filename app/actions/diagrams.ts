@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { diagramSchema } from '@/lib/validations/diagram'
 import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
+import { canWrite } from '@/lib/authorize'
 import type { DiagramType } from '@prisma/client'
 
 export async function getDiagrams(systemId?: string) {
@@ -45,6 +46,7 @@ interface CreateDiagramInput {
 export async function createDiagram(input: CreateDiagramInput) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = diagramSchema.safeParse(input)
   if (!validated.success) {
@@ -91,6 +93,7 @@ interface UpdateDiagramInput {
 export async function updateDiagram(id: string, input: UpdateDiagramInput) {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
+  if (!canWrite(session.user.role)) return { error: 'Insufficient permissions' }
 
   const validated = diagramSchema.partial().safeParse(input)
   if (!validated.success) {

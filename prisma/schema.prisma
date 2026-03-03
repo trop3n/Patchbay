@@ -194,6 +194,8 @@ model Device {
   alertThresholds AlertThreshold[]
   alerts          Alert[]
 
+  @@index([ipAddress])
+  @@index([snmpEnabled])
   @@map("devices")
 }
 
@@ -251,6 +253,8 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 

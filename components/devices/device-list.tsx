@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { Device, DeviceStatus } from '@prisma/client'
+import type { Device } from '@prisma/client'
+import { deviceStatusColors, deviceStatusLabels } from '@/lib/device-status'
 
 type DeviceWithRelations = Device & {
   system: { id: string; name: string; slug: string } | null
@@ -13,21 +14,8 @@ interface DeviceListProps {
   devices: DeviceWithRelations[]
 }
 
-const statusColors: Record<DeviceStatus, string> = {
-  ONLINE: 'bg-green-500',
-  OFFLINE: 'bg-red-500',
-  WARNING: 'bg-yellow-500',
-  ERROR: 'bg-orange-500',
-  UNKNOWN: 'bg-gray-500',
-}
-
-const statusLabels: Record<DeviceStatus, string> = {
-  ONLINE: 'Online',
-  OFFLINE: 'Offline',
-  WARNING: 'Warning',
-  ERROR: 'Error',
-  UNKNOWN: 'Unknown',
-}
+const statusColors = deviceStatusColors
+const statusLabels = deviceStatusLabels
 
 export function DeviceList({ devices }: DeviceListProps) {
   if (devices.length === 0) {

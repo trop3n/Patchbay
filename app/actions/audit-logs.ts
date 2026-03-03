@@ -38,6 +38,10 @@ export async function getAuditLogsForEntity(entityType: EntityType, entityId: st
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
+  if (session.user.role !== 'ADMIN') {
+    throw new Error('Insufficient permissions')
+  }
+
   return prisma.auditLog.findMany({
     where: { entityType, entityId },
     orderBy: { createdAt: 'desc' },

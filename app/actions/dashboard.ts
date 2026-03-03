@@ -36,32 +36,29 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
 
-  const [systems, devices] = await Promise.all([
-    prisma.system.findMany({
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        status: true,
-        location: true,
-        devices: {
-          select: { status: true },
-        },
+  const systems = await prisma.system.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      status: true,
+      location: true,
+      devices: {
+        select: { status: true },
       },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.device.findMany({
-      select: { status: true },
-    }),
-  ])
+    },
+    orderBy: { name: 'asc' },
+  })
+
+  const allDevices = systems.flatMap((s) => s.devices)
 
   const totalDevices: DeviceHealthStats = {
-    total: devices.length,
-    online: devices.filter((d) => d.status === 'ONLINE').length,
-    offline: devices.filter((d) => d.status === 'OFFLINE').length,
-    warning: devices.filter((d) => d.status === 'WARNING').length,
-    error: devices.filter((d) => d.status === 'ERROR').length,
-    unknown: devices.filter((d) => d.status === 'UNKNOWN').length,
+    total: allDevices.length,
+    online: allDevices.filter((d) => d.status === 'ONLINE').length,
+    offline: allDevices.filter((d) => d.status === 'OFFLINE').length,
+    warning: allDevices.filter((d) => d.status === 'WARNING').length,
+    error: allDevices.filter((d) => d.status === 'ERROR').length,
+    unknown: allDevices.filter((d) => d.status === 'UNKNOWN').length,
   }
 
   const systemsHealth: SystemHealth[] = systems.map((system) => {
