@@ -5,6 +5,8 @@ import { DeviceListFilter } from '@/components/devices/device-list-filter'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import { CsvExportButton } from '@/components/csv/csv-export-button'
+import { CsvImportDialog } from '@/components/csv/csv-import-dialog'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,12 +41,16 @@ export default async function DevicesPage({ searchParams }: DevicesPageProps) {
           <h1 className="text-3xl font-bold">Devices</h1>
           <p className="text-muted-foreground">Monitor and manage network devices</p>
         </div>
-        <Button asChild>
-          <Link href="/devices/new">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Device
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <CsvExportButton entityType="devices" />
+          <CsvImportDialog entityType="devices" />
+          <Button asChild>
+            <Link href="/devices/new">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Device
+            </Link>
+          </Button>
+        </div>
       </div>
       <Suspense fallback={<div>Loading filters...</div>}>
         <DeviceListFilter

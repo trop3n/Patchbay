@@ -5,6 +5,8 @@ import { SystemListFilter } from '@/components/systems/system-list-filter'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import { CsvExportButton } from '@/components/csv/csv-export-button'
+import { CsvImportDialog } from '@/components/csv/csv-import-dialog'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,12 +39,16 @@ export default async function SystemsPage({ searchParams }: SystemsPageProps) {
           <h1 className="text-3xl font-bold">Systems</h1>
           <p className="text-muted-foreground">Manage your A/V systems and equipment</p>
         </div>
-        <Button asChild>
-          <Link href="/systems/new">
-            <Plus className="w-4 h-4 mr-2" />
-            Add System
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <CsvExportButton entityType="systems" />
+          <CsvImportDialog entityType="systems" />
+          <Button asChild>
+            <Link href="/systems/new">
+              <Plus className="w-4 h-4 mr-2" />
+              Add System
+            </Link>
+          </Button>
+        </div>
       </div>
       <Suspense fallback={<div>Loading filters...</div>}>
         <SystemListFilter categories={filterOptions.categories} />

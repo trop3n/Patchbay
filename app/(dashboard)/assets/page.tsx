@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import type { AssetStatus } from '@prisma/client'
+import { CsvExportButton } from '@/components/csv/csv-export-button'
+import { CsvImportDialog } from '@/components/csv/csv-import-dialog'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,12 +40,16 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
           <h1 className="text-3xl font-bold">Assets</h1>
           <p className="text-muted-foreground">Equipment and inventory management</p>
         </div>
-        <Button asChild>
-          <Link href="/assets/new">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Asset
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <CsvExportButton entityType="assets" />
+          <CsvImportDialog entityType="assets" />
+          <Button asChild>
+            <Link href="/assets/new">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Asset
+            </Link>
+          </Button>
+        </div>
       </div>
       <Suspense fallback={<div>Loading filters...</div>}>
         <AssetListFilter systems={filterOptions.systems} />
