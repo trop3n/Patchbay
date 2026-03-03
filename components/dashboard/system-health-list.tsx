@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { MapPin } from 'lucide-react'
-import type { SystemStatus } from '@prisma/client'
+import type { DeviceStatus, SystemStatus } from '@prisma/client'
+import { useDeviceStatus } from '@/components/providers/device-status-provider'
 
 interface DeviceHealthStats {
   total: number
@@ -24,6 +25,7 @@ interface SystemHealth {
   location: string | null
   deviceCount: number
   deviceStats: DeviceHealthStats
+  devices: Array<{ id: string; status: DeviceStatus }>
 }
 
 interface SystemHealthListProps {
@@ -51,7 +53,24 @@ function getHealthPercentage(stats: DeviceHealthStats): number {
   return Math.round((stats.online / stats.total) * 100)
 }
 
+function computeLiveStats(
+  devices: Array<{ id: string; status: DeviceStatus }>,
+  statusMap: Map<string, DeviceStatus>
+): DeviceHealthStats {
+  const statuses = devices.map((d) => statusMap.get(d.id) ?? d.status)
+  return {
+    total: statuses.length,
+    online: statuses.filter((s) => s === 'ONLINE').length,
+    offline: statuses.filter((s) => s === 'OFFLINE').length,
+    warning: statuses.filter((s) => s === 'WARNING').length,
+    error: statuses.filter((s) => s === 'ERROR').length,
+    unknown: statuses.filter((s) => s === 'UNKNOWN').length,
+  }
+}
+
 export function SystemHealthList({ systems }: SystemHealthListProps) {
+  const { statusMap } = useDeviceStatus()
+
   if (systems.length === 0) {
     return (
       <Card>
@@ -68,8 +87,9 @@ export function SystemHealthList({ systems }: SystemHealthListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {systems.map((system) => {
-        const healthPercent = getHealthPercentage(system.deviceStats)
-        const hasIssues = system.deviceStats.offline > 0 || system.deviceStats.error > 0 || system.deviceStats.warning > 0
+        const liveStats = computeLiveStats(system.devices, statusMap)
+        const healthPercent = getHealthPercentage(liveStats)
+        const hasIssues = liveStats.offline > 0 || liveStats.error > 0 || liveStats.warning > 0
 
         return (
           <Link key={system.id} href={`/systems/${system.id}`}>
@@ -98,7 +118,7 @@ export function SystemHealthList({ systems }: SystemHealthListProps) {
                       {system.deviceCount} device{system.deviceCount !== 1 ? 's' : ''}
                     </span>
                     <span className={hasIssues ? 'text-orange-500' : 'text-green-500'}>
-                      {system.deviceStats.online}/{system.deviceStats.total} online
+                      {liveStats.online}/{liveStats.total} online
                     </span>
                   </div>
 
@@ -112,7 +132,7 @@ export function SystemHealthList({ systems }: SystemHealthListProps) {
                         <span>{healthPercent}% healthy</span>
                         {hasIssues && (
                           <span className="text-orange-500">
-                            {system.deviceStats.offline + system.deviceStats.error} issue{(system.deviceStats.offline + system.deviceStats.error) !== 1 ? 's' : ''}
+                            {liveStats.offline + liveStats.error} issue{(liveStats.offline + liveStats.error) !== 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
@@ -125,14 +145,14 @@ export function SystemHealthList({ systems }: SystemHealthListProps) {
 
                   {hasIssues && (
                     <div className="flex gap-2 text-xs">
-                      {system.deviceStats.offline > 0 && (
-                        <span className="text-red-500">{system.deviceStats.offline} offline</span>
+                      {liveStats.offline > 0 && (
+                        <span className="text-red-500">{liveStats.offline} offline</span>
                       )}
-                      {system.deviceStats.error > 0 && (
-                        <span className="text-orange-500">{system.deviceStats.error} error</span>
+                      {liveStats.error > 0 && (
+                        <span className="text-orange-500">{liveStats.error} error</span>
                       )}
-                      {system.deviceStats.warning > 0 && (
-                        <span className="text-yellow-500">{system.deviceStats.warning} warning</span>
+                      {liveStats.warning > 0 && (
+                        <span className="text-yellow-500">{liveStats.warning} warning</span>
                       )}
                     </div>
                   )}

@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { Sidebar } from '@/components/layout/sidebar'
+import { DeviceStatusProvider } from '@/components/providers/device-status-provider'
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +21,9 @@ export default async function DashboardLayout({
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header user={session.user} />
         <main className="flex-1 overflow-auto p-6">
-          {children}
+          <DeviceStatusProvider>
+            {children}
+          </DeviceStatusProvider>
         </main>
       </div>
     </div>

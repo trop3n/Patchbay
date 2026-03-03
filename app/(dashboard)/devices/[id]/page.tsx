@@ -10,26 +10,10 @@ import { ArrowLeft, Edit, Network, Calendar, Package, Cpu, Clock } from 'lucide-
 import { DeleteDeviceButton } from '@/components/devices/delete-device-button'
 import { DeviceStatusUpdate } from '@/components/devices/device-status-update'
 import { DeviceUptimeStats } from '@/components/devices/device-uptime-stats'
-import type { DeviceStatus } from '@prisma/client'
+import { LiveDeviceStatusDot } from '@/components/devices/live-status-indicator'
 
 interface DeviceDetailPageProps {
   params: Promise<{ id: string }>
-}
-
-const statusColors: Record<DeviceStatus, string> = {
-  ONLINE: 'bg-green-500',
-  OFFLINE: 'bg-red-500',
-  WARNING: 'bg-yellow-500',
-  ERROR: 'bg-orange-500',
-  UNKNOWN: 'bg-gray-500',
-}
-
-const statusLabels: Record<DeviceStatus, string> = {
-  ONLINE: 'Online',
-  OFFLINE: 'Offline',
-  WARNING: 'Warning',
-  ERROR: 'Error',
-  UNKNOWN: 'Unknown',
 }
 
 export default async function DeviceDetailPage({ params }: DeviceDetailPageProps) {
@@ -58,7 +42,7 @@ export default async function DeviceDetailPage({ params }: DeviceDetailPageProps
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{device.name}</h1>
-            <div className={`w-3 h-3 rounded-full ${statusColors[device.status]}`} title={statusLabels[device.status]} />
+            <LiveDeviceStatusDot deviceId={device.id} initialStatus={device.status} />
           </div>
           {device.deviceType && (
             <p className="text-muted-foreground">{device.deviceType}</p>

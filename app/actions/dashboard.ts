@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import type { SystemStatus } from '@prisma/client'
+import type { DeviceStatus, SystemStatus } from '@prisma/client'
 
 export interface DeviceHealthStats {
   total: number
@@ -21,6 +21,7 @@ export interface SystemHealth {
   location: string | null
   deviceCount: number
   deviceStats: DeviceHealthStats
+  devices: Array<{ id: string; status: DeviceStatus }>
 }
 
 export interface DashboardStats {
@@ -44,7 +45,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       status: true,
       location: true,
       devices: {
-        select: { status: true },
+        select: { id: true, status: true },
       },
     },
     orderBy: { name: 'asc' },
@@ -79,6 +80,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       location: system.location,
       deviceCount: system.devices.length,
       deviceStats,
+      devices: system.devices,
     }
   })
 
