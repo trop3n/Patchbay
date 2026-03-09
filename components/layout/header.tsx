@@ -40,7 +40,7 @@ export function Header({ user }: HeaderProps) {
   }
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-6 gap-4">
+    <header className="h-16 bg-[hsl(var(--surface-1))]/80 backdrop-blur-[var(--blur-amount)] shadow-elevation-2 relative z-10 flex items-center justify-between px-6 gap-4">
       <form onSubmit={handleSearch} className="flex-1 max-w-md">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -49,7 +49,7 @@ export function Header({ user }: HeaderProps) {
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]"
           />
         </div>
       </form>

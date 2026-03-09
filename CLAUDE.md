@@ -14,9 +14,10 @@ npm run build            # Production build
 npm run lint             # ESLint
 npm run typecheck        # tsc --noEmit
 
-npm test                                    # All tests
+npm test                                    # All tests (in __tests__/)
 npm test -- path/to/test.test.ts            # Single test file
 npm test -- --testNamePattern="test name"   # Tests matching name
+npm run test:watch                          # Watch mode
 
 npx prisma generate      # Generate Prisma client after schema changes
 npx prisma migrate dev   # Create/run migrations
@@ -25,6 +26,7 @@ npx prisma db seed       # Seed database
 npm run docker:dev:build # Docker dev environment
 npm run syslog:dev       # Syslog server on port 1514
 npm run snmp             # SNMP poller
+npx prisma studio        # Database GUI
 ```
 
 ## Architecture
@@ -49,7 +51,7 @@ SSE endpoint (`/api/events/devices`) pushes device status every 5 seconds. Clien
 
 ### Auth & Authorization
 
-NextAuth.js v5 with JWT strategy. Middleware protects all routes except `/login`, `/error`, `/status`, `/api/auth`. Role-based access: `canWrite(role)` for ADMIN/EDITOR, `isAdmin(role)` for ADMIN-only operations.
+NextAuth.js v5 with JWT strategy. Middleware protects all routes except `/login`, `/error`, `/api/auth`, static assets. Role-based access: `canWrite(role)` for ADMIN/EDITOR, `isAdmin(role)` for ADMIN-only operations.
 
 ## Code Style
 

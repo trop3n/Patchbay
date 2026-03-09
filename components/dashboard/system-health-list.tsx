@@ -93,7 +93,7 @@ export function SystemHealthList({ systems }: SystemHealthListProps) {
 
         return (
           <Link key={system.id} href={`/systems/${system.id}`}>
-            <Card className="hover:border-primary/50 transition-colors h-full">
+            <Card className="hover:shadow-elevation-3 hover:border-primary/30 transition-all duration-200 hover:-translate-y-0.5 h-full">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>

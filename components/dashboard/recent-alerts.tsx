@@ -28,7 +28,7 @@ const statusLabels = deviceStatusLabels
 export function RecentAlerts({ alerts }: RecentAlertsProps) {
   if (alerts.length === 0) {
     return (
-      <Card>
+      <Card className="shadow-elevation-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
@@ -44,7 +44,7 @@ export function RecentAlerts({ alerts }: RecentAlertsProps) {
   }
 
   return (
-    <Card>
+    <Card className="shadow-elevation-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-orange-500" />
@@ -58,7 +58,7 @@ export function RecentAlerts({ alerts }: RecentAlertsProps) {
             <Link
               key={alert.id}
               href={`/devices/${alert.id}`}
-              className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+              className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted hover:shadow-elevation-1 transition-all"
             >
               <div className={`w-2 h-2 rounded-full mt-2 ${statusColors[alert.status]}`} />
               <div className="flex-1 min-w-0">

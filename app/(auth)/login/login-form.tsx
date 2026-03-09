@@ -45,8 +45,8 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-[hsl(var(--surface-0))]">
+      <Card className="w-full max-w-md shadow-elevation-3">
         <CardHeader>
           <CardTitle>Patchbay</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>

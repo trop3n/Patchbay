@@ -33,8 +33,8 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 border-r bg-muted/50 flex flex-col">
-      <div className="p-6 border-b">
+    <aside className="w-64 bg-[hsl(var(--surface-1))] shadow-elevation-2 z-20 relative flex flex-col">
+      <div className="p-6 shadow-elevation-1">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold">P</span>
@@ -54,7 +54,7 @@ export function Sidebar() {
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-elevation-1'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >

@@ -55,6 +55,12 @@ const config: Config = {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		boxShadow: {
+  			'elevation-1': 'var(--elevation-1)',
+  			'elevation-2': 'var(--elevation-2)',
+  			'elevation-3': 'var(--elevation-3)',
+  			'elevation-4': 'var(--elevation-4)'
   		}
   	}
   },
