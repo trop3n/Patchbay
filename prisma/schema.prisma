@@ -64,6 +64,11 @@ enum ContentType {
   PLAIN_TEXT
 }
 
+enum LedWallType {
+  VIDEO_WALL
+  STRIP_LAYOUT
+}
+
 model User {
   id          String     @id @default(cuid())
   email       String     @unique
@@ -82,6 +87,7 @@ model User {
   documents       Document[]
   assets          Asset[]
   racks           Rack[]
+  ledWalls        LedWall[]
   auditLogs       AuditLog[]
   attachments     Attachment[]
   alertThresholds AlertThreshold[]
@@ -108,6 +114,7 @@ model System {
   assets          Asset[]
   devices         Device[]
   racks           Rack[]
+  ledWalls        LedWall[]
   attachments     Attachment[]
   alertThresholds AlertThreshold[]
   alerts          Alert[]
@@ -257,6 +264,24 @@ model Rack {
   updatedAt   DateTime @updatedAt
 
   @@map("racks")
+}
+
+model LedWall {
+  id          String      @id @default(cuid())
+  name        String
+  description String?     @db.Text
+  type        LedWallType
+  data        Json
+  width       Int?
+  height      Int?
+  systemId    String?
+  system      System?     @relation(fields: [systemId], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User        @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("led_walls")
 }
 
 model AuditLog {

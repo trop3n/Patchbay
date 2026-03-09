@@ -12,6 +12,7 @@ export type EntityType =
   | 'Attachment'
   | 'Device'
   | 'AlertThreshold'
+  | 'LedWall'
 
 interface CreateAuditLogInput {
   action: AuditAction

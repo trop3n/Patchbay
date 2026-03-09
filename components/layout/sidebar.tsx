@@ -14,6 +14,7 @@ import {
   Settings,
   Cpu,
   File,
+  Tv2,
 } from 'lucide-react'
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/devices', label: 'Devices', icon: Cpu },
   { href: '/logs', label: 'Logs', icon: File },
   { href: '/racks', label: 'Racks', icon: Server },
+  { href: '/led-walls', label: 'LED Walls', icon: Tv2 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
