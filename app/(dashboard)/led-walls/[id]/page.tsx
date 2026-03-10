@@ -6,9 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Edit, Package, User, Calendar } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { DeleteLedWallButton } from '@/components/led-walls/delete-led-wall-button'
-import { LedWallDetailView } from '@/components/led-walls/led-wall-detail-view'
 import type { Node, Edge } from '@xyflow/react'
+
+const LedWallDetailView = dynamic(
+  () => import('@/components/led-walls/led-wall-detail-view'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[600px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
+        Loading layout...
+      </div>
+    ),
+  }
+)
 
 interface LedWallDetailPageProps {
   params: Promise<{ id: string }>

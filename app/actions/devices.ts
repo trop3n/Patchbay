@@ -104,7 +104,7 @@ export async function getDevice(id: string) {
       system: { select: { id: true, name: true, slug: true } },
       logs: {
         orderBy: { timestamp: 'desc' },
-        take: 50,
+        take: 10,
       },
     },
   })

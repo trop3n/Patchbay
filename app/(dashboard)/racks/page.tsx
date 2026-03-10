@@ -9,7 +9,15 @@ export const dynamic = 'force-dynamic'
 export default async function RacksPage() {
   const racks = await prisma.rack.findMany({
     orderBy: { name: 'asc' },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      location: true,
+      height: true,
+      systemId: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
       system: { select: { name: true, slug: true } },
       createdBy: { select: { name: true, username: true } },
     },

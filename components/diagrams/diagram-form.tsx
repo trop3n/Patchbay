@@ -24,9 +24,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DiagramEditor } from '@/components/diagrams/diagram-editor'
 import { ExcalidrawEditor } from '@/components/diagrams/excalidraw-editor'
+
+const DiagramEditor = dynamic(
+  () => import('@/components/diagrams/diagram-editor'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[600px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
+        Loading editor...
+      </div>
+    ),
+  }
+)
 import { createDiagram } from '@/app/actions/diagrams'
 import { diagramTemplates } from '@/lib/diagram-templates'
 import type { System } from '@prisma/client'

@@ -5,9 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Edit, Calendar, User, Folder } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { DeleteDiagramButton } from '@/components/diagrams/delete-diagram-button'
-import { DiagramViewer } from '@/components/diagrams/diagram-viewer'
 import { DiagramVersionHistory } from '@/components/diagrams/diagram-version-history'
+
+const DiagramViewer = dynamic(
+  () => import('@/components/diagrams/diagram-viewer'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[500px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
+        Loading diagram...
+      </div>
+    ),
+  }
+)
 
 interface DiagramDetailPageProps {
   params: Promise<{ id: string }>

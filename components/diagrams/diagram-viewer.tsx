@@ -18,7 +18,7 @@ interface DiagramViewerProps {
   type?: 'SIGNAL_FLOW' | 'WHITEBOARD' | 'NETWORK' | 'RACK_LAYOUT'
 }
 
-export function DiagramViewer({ data, type }: DiagramViewerProps) {
+export default function DiagramViewer({ data, type }: DiagramViewerProps) {
   const nodeTypes = useMemo(() => ({ avNode: AVNode }), [])
 
   const nodes = useMemo(() => {

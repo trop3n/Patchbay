@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { getDiagramVersion, restoreDiagramVersion } from '@/app/actions/diagrams'
-import { DiagramViewer } from './diagram-viewer'
+import DiagramViewer from './diagram-viewer'
 
 interface DiagramVersionHistoryProps {
   diagramId: string
@@ -31,7 +31,7 @@ interface DiagramVersionHistoryProps {
   }>
 }
 
-export function DiagramVersionHistory({ diagramId, diagramType, versions }: DiagramVersionHistoryProps) {
+export function DiagramVersionHistory({ diagramType, versions }: DiagramVersionHistoryProps) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [previewVersion, setPreviewVersion] = useState<{ id: string; data: unknown } | null>(null)
@@ -59,7 +59,7 @@ export function DiagramVersionHistory({ diagramId, diagramType, versions }: Diag
     try {
       const result = await restoreDiagramVersion(previewVersion.id)
       if ('error' in result) {
-        setRestoreError(result.error)
+        setRestoreError(result.error ?? null)
         return
       }
       setPreviewVersion(null)

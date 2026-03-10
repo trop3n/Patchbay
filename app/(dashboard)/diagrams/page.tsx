@@ -9,7 +9,16 @@ export const dynamic = 'force-dynamic'
 export default async function DiagramsPage() {
   const diagrams = await prisma.diagram.findMany({
     orderBy: { createdAt: 'desc' },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      type: true,
+      thumbnailUrl: true,
+      systemId: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
       system: { select: { name: true, slug: true } },
       createdBy: { select: { name: true, username: true } },
     },

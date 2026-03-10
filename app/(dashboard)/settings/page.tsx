@@ -56,10 +56,12 @@ export default async function SettingsPage() {
   let retentionStats = null
 
   if (isAdmin) {
-    users = await getUsers()
-    auditLogs = await getAuditLogs()
-    retentionSettings = await getRetentionSettings()
-    retentionStats = await getCleanupPreview()
+    ;[users, auditLogs, retentionSettings, retentionStats] = await Promise.all([
+      getUsers(),
+      getAuditLogs(),
+      getRetentionSettings(),
+      getCleanupPreview(),
+    ])
   }
 
   if (isAdmin || isEditor) {

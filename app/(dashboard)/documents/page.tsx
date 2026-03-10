@@ -9,7 +9,14 @@ export const dynamic = 'force-dynamic'
 export default async function DocumentsPage() {
   const documents = await prisma.document.findMany({
     orderBy: { createdAt: 'desc' },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      contentType: true,
+      systemId: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
       system: { select: { name: true, slug: true } },
       createdBy: { select: { name: true, username: true } },
     },

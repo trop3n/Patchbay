@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import type { LedWall } from '@prisma/client'
 
-type LedWallWithRelations = LedWall & {
+type LedWallWithRelations = Omit<LedWall, 'data'> & {
+  data?: unknown
   system: { name: string; slug: string } | null
   createdBy: { name: string | null; username: string }
 }

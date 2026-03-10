@@ -27,7 +27,7 @@ interface DiagramEditorProps {
   onAddNode: (type: NodeType, label: string) => void
 }
 
-export function DiagramEditor({
+export default function DiagramEditor({
   nodes,
   edges,
   onNodesChange,

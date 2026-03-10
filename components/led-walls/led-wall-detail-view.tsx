@@ -32,7 +32,7 @@ const edgeTypes = {
   ledConnection: LedConnectionEdge,
 }
 
-export function LedWallDetailView({ data }: LedWallDetailViewProps) {
+export default function LedWallDetailView({ data }: LedWallDetailViewProps) {
   const [showPorts, setShowPorts] = useState(false)
 
   const nodes = useMemo(

@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Document, ContentType } from '@prisma/client'
 
-type DocumentWithRelations = Document & {
+type DocumentWithRelations = Omit<Document, 'content'> & {
+  content?: string
   system: { name: string; slug: string } | null
   createdBy: { name: string | null; username: string }
 }
@@ -76,10 +77,12 @@ export function DocumentList({ documents }: DocumentListProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-                {stripContent(document.content).slice(0, 150)}
-                {document.content.length > 150 ? '...' : ''}
-              </p>
+              {document.content && (
+                <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                  {stripContent(document.content).slice(0, 150)}
+                  {document.content.length > 150 ? '...' : ''}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 By {document.createdBy.name || document.createdBy.username} •{' '}
                 {new Date(document.createdAt).toLocaleDateString()}

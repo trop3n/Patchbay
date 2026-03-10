@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import type { Diagram } from '@prisma/client'
 
-type DiagramWithRelations = Diagram & {
+type DiagramWithRelations = Omit<Diagram, 'data'> & {
+  data?: unknown
   system: { name: string; slug: string } | null
   createdBy: { name: string | null; username: string }
 }

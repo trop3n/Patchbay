@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Rack } from '@prisma/client'
 
-type RackWithRelations = Rack & {
+type RackWithRelations = Omit<Rack, 'units'> & {
+  units?: unknown
   system: { name: string; slug: string } | null
   createdBy: { name: string | null; username: string }
 }

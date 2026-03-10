@@ -44,7 +44,7 @@ const edgeTypes = {
   ledConnection: LedConnectionEdge,
 }
 
-export function LedWallBuilder({
+export default function LedWallBuilder({
   layoutType,
   nodes,
   edges,

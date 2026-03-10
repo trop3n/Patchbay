@@ -66,7 +66,7 @@ export function AlertThresholdList({ thresholds }: AlertThresholdListProps) {
     try {
       const result = await deleteAlertThreshold(deleteId)
       if ('error' in result) {
-        setDeleteError(result.error)
+        setDeleteError(result.error ?? null)
       } else {
         setDeleteId(null)
         router.refresh()

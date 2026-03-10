@@ -48,6 +48,7 @@ export async function getAuditLogsForEntity(entityType: EntityType, entityId: st
     include: {
       user: { select: { name: true, username: true, email: true } },
     },
+    take: 100,
   })
 }
 

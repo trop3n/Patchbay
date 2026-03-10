@@ -24,8 +24,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LedWallBuilder } from './led-wall-builder'
+
+const LedWallBuilder = dynamic(
+  () => import('./led-wall-builder'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[600px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
+        Loading builder...
+      </div>
+    ),
+  }
+)
 import { createLedWall } from '@/app/actions/led-walls'
 import type { System } from '@prisma/client'
 
