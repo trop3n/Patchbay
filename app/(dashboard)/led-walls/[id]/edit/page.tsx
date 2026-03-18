@@ -22,7 +22,7 @@ export default async function EditLedWallPage({ params }: EditLedWallPageProps) 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full">
       <LedWallEditForm ledWall={ledWall} systems={systems} />
     </div>
   )

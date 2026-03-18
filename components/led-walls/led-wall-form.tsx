@@ -26,13 +26,14 @@ import {
 } from '@/components/ui/select'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const LedWallBuilder = dynamic(
   () => import('./led-wall-builder'),
   {
     ssr: false,
     loading: () => (
-      <div className="h-[600px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
+      <div className="h-full min-h-[400px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
         Loading builder...
       </div>
     ),
@@ -56,6 +57,7 @@ export function LedWallForm({ systems, systemId }: LedWallFormProps) {
   const [layoutType, setLayoutType] = useState<LedWallTypeValue>('VIDEO_WALL')
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
+  const [configOpen, setConfigOpen] = useState(true)
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -103,18 +105,19 @@ export function LedWallForm({ systems, systemId }: LedWallFormProps) {
   }
 
   return (
-    <Card className="max-w-5xl">
-      <CardHeader>
-        <CardTitle>New LED Wall</CardTitle>
-        <CardDescription>Design an LED video wall or strip layout</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
+    <form onSubmit={onSubmit} className="flex h-full gap-0">
+      <div className={`shrink-0 flex transition-all duration-200 ${configOpen ? 'w-96' : 'w-0'}`}>
+        <Card className={`overflow-hidden border-r rounded-r-none flex flex-col transition-all duration-200 ${configOpen ? 'w-96 opacity-100' : 'w-0 opacity-0 border-0'}`}>
+          <CardHeader>
+            <CardTitle>New LED Wall</CardTitle>
+            <CardDescription>Design an LED video wall or strip layout</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input id="name" name="name" required placeholder="Main Stage LED Wall" />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="type">Layout Type</Label>
               <Select
@@ -130,65 +133,77 @@ export function LedWallForm({ systems, systemId }: LedWallFormProps) {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="system">Associated System</Label>
-            <Select
-              value={selectedSystemId || '__none__'}
-              onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a system (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {systems.map((system) => (
-                  <SelectItem key={system.id} value={system.id}>
-                    {system.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="system">Associated System</Label>
+              <Select
+                value={selectedSystemId || '__none__'}
+                onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a system (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {systems.map((system) => (
+                    <SelectItem key={system.id} value={system.id}>
+                      {system.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              placeholder="Describe this LED wall layout..."
-              rows={2}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Describe this LED wall layout..."
+                rows={2}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>LED Wall Builder</Label>
-            <LedWallBuilder
-              layoutType={layoutType}
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onAddNode={handleAddNode}
-            />
-          </div>
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+            <div className="flex gap-3">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Creating...' : 'Create LED Wall'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => router.back()}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          <div className="flex gap-3">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create LED Wall'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <button
+        type="button"
+        onClick={() => setConfigOpen((prev) => !prev)}
+        className="shrink-0 w-6 flex items-center justify-center border-y border-r rounded-r-md bg-muted/50 hover:bg-muted transition-colors"
+        title={configOpen ? 'Collapse panel' : 'Expand panel'}
+      >
+        {configOpen ? (
+          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0 pl-4">
+        <LedWallBuilder
+          layoutType={layoutType}
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onAddNode={handleAddNode}
+        />
+      </div>
+    </form>
   )
 }

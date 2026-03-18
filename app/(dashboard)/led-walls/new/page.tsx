@@ -10,7 +10,7 @@ export default async function NewLedWallPage() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="h-full">
       <LedWallForm systems={systems} />
     </div>
   )

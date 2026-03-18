@@ -135,7 +135,7 @@ export default function LedWallBuilder({
   }), [showPorts])
 
   return (
-    <div className="h-[600px] border rounded-lg overflow-hidden">
+    <div className="h-full min-h-[400px] border rounded-lg overflow-hidden">
       <ReactFlow
         nodes={nodesWithPorts}
         edges={edgesWithPorts}
