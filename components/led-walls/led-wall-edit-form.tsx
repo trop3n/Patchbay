@@ -1,18 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
-  type Node,
-  type Edge,
-  type OnNodesChange,
-  type OnEdgesChange,
-  type OnConnect,
-  type Connection,
-} from '@xyflow/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,8 +17,8 @@ import dynamic from 'next/dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const LedWallBuilder = dynamic(
-  () => import('./led-wall-builder'),
+const LedWallBuilderV2 = dynamic(
+  () => import('./builder'),
   {
     ssr: false,
     loading: () => (
@@ -40,6 +29,8 @@ const LedWallBuilder = dynamic(
   }
 )
 import { updateLedWall } from '@/app/actions/led-walls'
+import { isV2Data, createEmptyV2Data } from './builder/types'
+import type { LedWallDataV2 } from './builder/types'
 import type { LedWall, System } from '@prisma/client'
 
 type LedWallTypeValue = 'VIDEO_WALL' | 'STRIP_LAYOUT'
@@ -60,29 +51,14 @@ export function LedWallEditForm({ ledWall, systems }: LedWallEditFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(ledWall.systemId)
   const [layoutType, setLayoutType] = useState<LedWallTypeValue>(ledWall.type)
-
-  const existingData = ledWall.data as { nodes?: Node[]; edges?: Edge[] } | null
-  const [nodes, setNodes] = useState<Node[]>(existingData?.nodes || [])
-  const [edges, setEdges] = useState<Edge[]>(existingData?.edges || [])
   const [configOpen, setConfigOpen] = useState(true)
 
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    []
-  )
+  const existingData = ledWall.data
+  const initialV2 = isV2Data(existingData) ? existingData : createEmptyV2Data()
+  const builderDataRef = useRef<LedWallDataV2>(initialV2)
 
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    []
-  )
-
-  const onConnect: OnConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge({ ...params, type: 'ledConnection', data: { connectionType: 'data' } }, eds)),
-    []
-  )
-
-  const handleAddNode = useCallback((node: Node) => {
-    setNodes((nds) => [...nds, node])
+  const handleBuilderChange = useCallback((data: LedWallDataV2) => {
+    builderDataRef.current = data
   }, [])
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -97,10 +73,7 @@ export function LedWallEditForm({ ledWall, systems }: LedWallEditFormProps) {
       description: (formData.get('description') as string) || undefined,
       type: layoutType,
       systemId: selectedSystemId || null,
-      data: {
-        nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
-        edges,
-      },
+      data: builderDataRef.current,
     })
 
     if ('success' in result && result.success) {
@@ -202,14 +175,9 @@ export function LedWallEditForm({ ledWall, systems }: LedWallEditFormProps) {
       </button>
 
       <div className="flex-1 min-w-0 pl-4">
-        <LedWallBuilder
-          layoutType={layoutType}
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onAddNode={handleAddNode}
+        <LedWallBuilderV2
+          initialData={existingData}
+          onChange={handleBuilderChange}
         />
       </div>
     </form>

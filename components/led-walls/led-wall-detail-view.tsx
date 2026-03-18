@@ -17,9 +17,23 @@ import { LedStripNode } from './led-wall-strip-node'
 import { LedProcessorNode } from './led-wall-processor-node'
 import { LedConnectionEdge } from './led-wall-connection-edge'
 import { RoutingDetailToggle } from './routing-detail-toggle'
+import { isV2Data } from './builder/types'
+import dynamic from 'next/dynamic'
+
+const LedWallBuilderV2 = dynamic(
+  () => import('./builder'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[600px] border rounded-lg flex items-center justify-center text-muted-foreground animate-pulse bg-muted/50">
+        Loading viewer...
+      </div>
+    ),
+  }
+)
 
 interface LedWallDetailViewProps {
-  data: { nodes?: Node[]; edges?: Edge[] } | null
+  data: unknown
 }
 
 const nodeTypes = {
@@ -32,7 +46,7 @@ const edgeTypes = {
   ledConnection: LedConnectionEdge,
 }
 
-export default function LedWallDetailView({ data }: LedWallDetailViewProps) {
+function V1DetailView({ data }: { data: { nodes?: Node[]; edges?: Edge[] } | null }) {
   const [showPorts, setShowPorts] = useState(false)
 
   const nodes = useMemo(
@@ -78,4 +92,16 @@ export default function LedWallDetailView({ data }: LedWallDetailViewProps) {
       </ReactFlow>
     </div>
   )
+}
+
+export default function LedWallDetailView({ data }: LedWallDetailViewProps) {
+  if (isV2Data(data)) {
+    return (
+      <div className="h-[600px]">
+        <LedWallBuilderV2 initialData={data} readOnly />
+      </div>
+    )
+  }
+
+  return <V1DetailView data={data as { nodes?: Node[]; edges?: Edge[] } | null} />
 }

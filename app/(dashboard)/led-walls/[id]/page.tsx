@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Edit, Package, User, Calendar } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { DeleteLedWallButton } from '@/components/led-walls/delete-led-wall-button'
-import type { Node, Edge } from '@xyflow/react'
+import { isV2Data } from '@/components/led-walls/builder/types'
 
 const LedWallDetailView = dynamic(
   () => import('@/components/led-walls/led-wall-detail-view'),
@@ -34,7 +34,9 @@ export default async function LedWallDetailPage({ params }: LedWallDetailPagePro
     notFound()
   }
 
-  const data = ledWall.data as { nodes?: Node[]; edges?: Edge[] } | null
+  const data = ledWall.data
+  const v2 = isV2Data(data)
+  const v1Data = !v2 ? (data as { nodes?: { id: string }[] } | null) : null
 
   return (
     <div className="space-y-6">
@@ -54,7 +56,10 @@ export default async function LedWallDetailPage({ params }: LedWallDetailPagePro
             <Badge variant={ledWall.type === 'VIDEO_WALL' ? 'default' : 'secondary'}>
               {ledWall.type === 'VIDEO_WALL' ? 'Video Wall' : 'Strip Layout'}
             </Badge>
-            {data?.nodes && <span className="text-muted-foreground">{data.nodes.length} items</span>}
+            {v2
+              ? <span className="text-muted-foreground">{(data as { wallGroups: unknown[] }).wallGroups.length} groups</span>
+              : v1Data?.nodes && <span className="text-muted-foreground">{v1Data.nodes.length} items</span>
+            }
           </div>
         </div>
         <div className="flex gap-2">
