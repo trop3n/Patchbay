@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { RackBuilder } from '@/components/racks/rack-builder'
 import { createRack, type RackUnit } from '@/app/actions/racks'
 import type { System, Asset } from '@prisma/client'
@@ -31,6 +32,7 @@ export function RackForm({ systems, assets }: RackFormProps) {
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null)
   const [height, setHeight] = useState(42)
   const [units, setUnits] = useState<RackUnit[]>([])
+  const [configOpen, setConfigOpen] = useState(true)
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -59,14 +61,14 @@ export function RackForm({ systems, assets }: RackFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Rack Details</CardTitle>
-          <CardDescription>Configure rack information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+    <form onSubmit={onSubmit} className="flex h-full gap-0">
+      <div className={`shrink-0 flex transition-all duration-200 ${configOpen ? 'w-80' : 'w-0'}`}>
+        <Card className={`overflow-hidden border-r rounded-r-none flex flex-col transition-all duration-200 ${configOpen ? 'w-80 opacity-100' : 'w-0 opacity-0 border-0'}`}>
+          <CardHeader>
+            <CardTitle>New Rack</CardTitle>
+            <CardDescription>Configure rack details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input
@@ -77,6 +79,7 @@ export function RackForm({ systems, assets }: RackFormProps) {
                 required
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <Input
@@ -86,46 +89,61 @@ export function RackForm({ systems, assets }: RackFormProps) {
                 placeholder="Server Room A, Bay 3"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="system">Associated System</Label>
-            <Select value={selectedSystemId || '__none__'} onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a system (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {systems.map((system) => (
-                  <SelectItem key={system.id} value={system.id}>
-                    {system.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label htmlFor="system">Associated System</Label>
+              <Select value={selectedSystemId || '__none__'} onValueChange={(v) => setSelectedSystemId(v === '__none__' ? null : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a system (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  {systems.map((system) => (
+                    <SelectItem key={system.id} value={system.id}>
+                      {system.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <RackBuilder
-        height={height}
-        units={units}
-        onHeightChange={setHeight}
-        onUnitsChange={setUnits}
-        assets={assets}
-      />
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+            <div className="flex gap-3">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Creating...' : 'Create Rack'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => router.back()}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create Rack'}
-        </Button>
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancel
-        </Button>
+      <button
+        type="button"
+        onClick={() => setConfigOpen((prev) => !prev)}
+        className="shrink-0 w-6 flex items-center justify-center border-y border-r rounded-r-md bg-muted/50 hover:bg-muted transition-colors"
+        title={configOpen ? 'Collapse panel' : 'Expand panel'}
+      >
+        {configOpen ? (
+          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <RackBuilder
+          height={height}
+          units={units}
+          onHeightChange={setHeight}
+          onUnitsChange={setUnits}
+          assets={assets}
+        />
       </div>
     </form>
   )

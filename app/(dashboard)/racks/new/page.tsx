@@ -16,7 +16,7 @@ export default async function NewRackPage() {
   ])
 
   return (
-    <div className="space-y-6">
+    <div className="h-full">
       <RackForm systems={systems} assets={assets} />
     </div>
   )

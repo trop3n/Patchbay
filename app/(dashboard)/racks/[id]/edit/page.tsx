@@ -26,7 +26,7 @@ export default async function EditRackPage({ params }: EditRackPageProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full">
       <RackEditForm rack={rack} systems={systems} assets={assets} />
     </div>
   )
