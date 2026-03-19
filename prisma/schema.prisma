@@ -88,6 +88,7 @@ model User {
   assets          Asset[]
   racks           Rack[]
   ledWalls        LedWall[]
+  systemBuilds    SystemBuild[]
   auditLogs       AuditLog[]
   attachments     Attachment[]
   alertThresholds AlertThreshold[]
@@ -115,6 +116,7 @@ model System {
   devices         Device[]
   racks           Rack[]
   ledWalls        LedWall[]
+  systemBuilds    SystemBuild[]
   attachments     Attachment[]
   alertThresholds AlertThreshold[]
   alerts          Alert[]
@@ -282,6 +284,21 @@ model LedWall {
   updatedAt   DateTime    @updatedAt
 
   @@map("led_walls")
+}
+
+model SystemBuild {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  data        Json
+  systemId    String?
+  system      System?  @relation(fields: [systemId], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_builds")
 }
 
 model AuditLog {
