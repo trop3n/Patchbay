@@ -19,7 +19,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { createSystemBuild } from '@/app/actions/system-builds'
 import type { System } from '@prisma/client'
 import type { Node, Edge } from '@xyflow/react'
-import type { HardwareNodeData } from './hardware-node'
 
 const BuilderEditor = dynamic(
   () => import('./builder-editor'),
@@ -43,14 +42,11 @@ export function SystemBuildForm({ systems }: SystemBuildFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null)
   const [configOpen, setConfigOpen] = useState(true)
-  const nodesRef = useRef<Node<HardwareNodeData>[]>([])
+  const nodesRef = useRef<Node[]>([])
   const edgesRef = useRef<Edge[]>([])
 
-  const handleNodesChange = useCallback((nodes: Node<HardwareNodeData>[]) => {
+  const handleChange = useCallback((nodes: Node[], edges: Edge[]) => {
     nodesRef.current = nodes
-  }, [])
-
-  const handleEdgesChange = useCallback((edges: Edge[]) => {
     edgesRef.current = edges
   }, [])
 
@@ -151,10 +147,7 @@ export function SystemBuildForm({ systems }: SystemBuildFormProps) {
 
       <div className="flex-1 min-w-0 pl-4">
         <BuilderEditor
-          nodes={[]}
-          edges={[]}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={handleEdgesChange}
+          onChange={handleChange}
         />
       </div>
     </form>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import {
   ReactFlow,
   Background,
@@ -22,40 +22,43 @@ import { Toolbox } from './toolbox'
 import { HardwareNode } from './hardware-node'
 import { HardwareEdge } from './hardware-edge'
 import { getHardwareType } from './hardware-types'
-import type { HardwareNodeData } from './hardware-node'
 
 const nodeTypes = { hardware: HardwareNode }
 const edgeTypes = { hardware: HardwareEdge }
 
 interface BuilderEditorProps {
-  nodes: Node<HardwareNodeData>[]
-  edges: Edge[]
-  onNodesChange: (nodes: Node<HardwareNodeData>[]) => void
-  onEdgesChange: (edges: Edge[]) => void
+  initialNodes?: Node[]
+  initialEdges?: Edge[]
+  onChange?: (nodes: Node[], edges: Edge[]) => void
   readOnly?: boolean
 }
 
 export default function BuilderEditor({
-  nodes,
-  edges,
-  onNodesChange: setNodes,
-  onEdgesChange: setEdges,
+  initialNodes = [],
+  initialEdges = [],
+  onChange,
   readOnly,
 }: BuilderEditorProps) {
-  const reactFlowRef = useRef<ReactFlowInstance<Node<HardwareNodeData>, Edge> | null>(null)
+  const reactFlowRef = useRef<ReactFlowInstance | null>(null)
+  const [nodes, setNodes] = useState<Node[]>(initialNodes)
+  const [edges, setEdges] = useState<Edge[]>(initialEdges)
 
-  const handleNodesChange: OnNodesChange<Node<HardwareNodeData>> = useCallback(
+  useEffect(() => {
+    onChange?.(nodes, edges)
+  }, [nodes, edges, onChange])
+
+  const handleNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      setNodes(applyNodeChanges(changes, nodes) as Node<HardwareNodeData>[])
+      setNodes((nds) => applyNodeChanges(changes, nds))
     },
-    [nodes, setNodes]
+    []
   )
 
   const handleEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      setEdges(applyEdgeChanges(changes, edges))
+      setEdges((eds) => applyEdgeChanges(changes, eds))
     },
-    [edges, setEdges]
+    []
   )
 
   const handleConnect: OnConnect = useCallback(
@@ -69,9 +72,9 @@ export default function BuilderEditor({
         type: 'hardware',
         data: { color: '#3b82f6' },
       }
-      setEdges([...edges, newEdge])
+      setEdges((eds) => [...eds, newEdge])
     },
-    [edges, setEdges]
+    []
   )
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -93,7 +96,7 @@ export default function BuilderEditor({
         y: e.clientY,
       })
 
-      const newNode: Node<HardwareNodeData> = {
+      const newNode: Node = {
         id: `${typeId}-${Date.now()}`,
         type: 'hardware',
         position,
@@ -104,9 +107,9 @@ export default function BuilderEditor({
         },
       }
 
-      setNodes([...nodes, newNode])
+      setNodes((nds) => [...nds, newNode])
     },
-    [nodes, setNodes]
+    []
   )
 
   const defaultEdgeOptions = useMemo(

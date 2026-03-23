@@ -119,10 +119,8 @@ export default async function SystemBuildDetailPage({ params }: SystemBuildDetai
         <CardContent>
           <div className="h-[600px]">
             <BuilderEditor
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={() => {}}
-              onEdgesChange={() => {}}
+              initialNodes={nodes}
+              initialEdges={edges}
               readOnly
             />
           </div>

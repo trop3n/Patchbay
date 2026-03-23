@@ -19,7 +19,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { updateSystemBuild } from '@/app/actions/system-builds'
 import type { SystemBuild, System } from '@prisma/client'
 import type { Node, Edge } from '@xyflow/react'
-import type { HardwareNodeData } from './hardware-node'
 
 const BuilderEditor = dynamic(
   () => import('./builder-editor'),
@@ -50,18 +49,15 @@ export function SystemBuildEditForm({ build, systems }: SystemBuildEditFormProps
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(build.systemId)
   const [configOpen, setConfigOpen] = useState(true)
 
-  const existingData = build.data as { nodes?: Node<HardwareNodeData>[]; edges?: Edge[] } | null
-  const initialNodes = (existingData?.nodes ?? []) as Node<HardwareNodeData>[]
+  const existingData = build.data as { nodes?: unknown[]; edges?: unknown[] } | null
+  const initialNodes = (existingData?.nodes ?? []) as Node[]
   const initialEdges = (existingData?.edges ?? []) as Edge[]
 
-  const nodesRef = useRef<Node<HardwareNodeData>[]>(initialNodes)
+  const nodesRef = useRef<Node[]>(initialNodes)
   const edgesRef = useRef<Edge[]>(initialEdges)
 
-  const handleNodesChange = useCallback((nodes: Node<HardwareNodeData>[]) => {
+  const handleChange = useCallback((nodes: Node[], edges: Edge[]) => {
     nodesRef.current = nodes
-  }, [])
-
-  const handleEdgesChange = useCallback((edges: Edge[]) => {
     edgesRef.current = edges
   }, [])
 
@@ -163,10 +159,9 @@ export function SystemBuildEditForm({ build, systems }: SystemBuildEditFormProps
 
       <div className="flex-1 min-w-0 pl-4">
         <BuilderEditor
-          nodes={initialNodes}
-          edges={initialEdges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={handleEdgesChange}
+          initialNodes={initialNodes}
+          initialEdges={initialEdges}
+          onChange={handleChange}
         />
       </div>
     </form>
