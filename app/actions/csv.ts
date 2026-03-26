@@ -303,7 +303,6 @@ export async function exportDevices(): Promise<string> {
     status: d.status,
     snmpEnabled: d.snmpEnabled ? 'true' : 'false',
     snmpVersion: d.snmpVersion ?? '',
-    snmpCommunity: d.snmpCommunity ?? '',
     snmpPort: d.snmpPort != null ? String(d.snmpPort) : '',
   }))
 

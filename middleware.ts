@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 export async function middleware(request: NextRequest) {
   const session = await auth()
 
-  if (!session) {
+  if (!session || !session.user?.id) {
     // API routes return 401 instead of redirecting
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

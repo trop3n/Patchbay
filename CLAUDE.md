@@ -87,6 +87,43 @@ Required: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
 
 Optional: `SYSLOG_*`, `SNMP_*`, `ALERT_*`, `SMTP_*` (see `.env.example`)
 
+## Known Issues & Technical Debt
+
+### Security (Critical/High)
+
+- **Stored XSS in document viewer** (`components/documents/document-viewer.tsx:30`): `RICH_TEXT` content rendered via unsanitized HTML injection. Any EDITOR can inject script tags stored in DB and executed for all viewers. Fix: sanitize with `dompurify`/`sanitize-html` before rendering and before saving.
+- **Deactivated users bypass access control** (`middleware.ts` + `lib/auth.ts`): When a user is deactivated, their JWT `id` is set to `''` but the session object is still truthy. Middleware only checks `if (!session)`, so deactivated users pass through to all routes and server actions. Fix: check `!session.user.id` in middleware.
+- **No rate limiting on login**: Credentials provider has no brute-force protection. Consider adding rate limiting middleware or account lockout.
+- **SNMP community strings exported in CSV** (`app/actions/csv.ts`): `exportDevices()` includes `snmpCommunity` field in cleartext CSV exports. This is effectively a password for SNMP v1/v2c.
+- **Retention API routes lack role checks** (`app/api/retention/route.ts`, `app/api/retention/cleanup/route.ts`): Routes delegate to server actions but any authenticated user (including VIEWER) can call them since the route handlers don't check roles before invoking the actions.
+- **Open redirect in login form** (`app/(auth)/login/login-form.tsx`): `callbackUrl` taken from query string and passed to `router.push()` without validation. Attacker can craft `?callbackUrl=https://evil.com` for phishing. Fix: validate it starts with `/` and not `//`.
+- **Webhook SSRF bypass** (`lib/alerts/notifications.ts`): Webhook URL validation checks hostnames at config time but not post-DNS-resolution. DNS rebinding can bypass private IP blocklist. Fix: resolve hostname to IP before making the request and check resolved IP.
+- **Content-Disposition header injection** (`app/api/attachments/[id]/route.ts`): `originalName` from DB used unsanitized in `Content-Disposition` header. Fix: sanitize or encode the filename.
+
+### Bugs (High/Medium)
+
+- **CSV export crashes when device has no system** (`app/actions/csv.ts:297`): `d.system.slug` throws `TypeError` if system is null. Fix: add null check (`d.system?.slug ?? ''`).
+- **Cannot disassociate device from system** (`app/actions/devices.ts:183`): `updateDevice` only sets `systemId` when truthy; passing `null` or empty string is silently ignored. Fix: handle explicit null to disconnect the relation.
+- **SSE stream leak on early disconnect** (`app/api/events/devices/route.ts`): Abort listener registered after initial async `fetchDevices()` call — if client disconnects during that await, the interval is never cleaned up. Also, uncaught throw from `fetchDevices()` leaves the controller unclosed.
+- **File deleted before DB record in attachment deletion** (`app/actions/attachments.ts:112-113`): If `prisma.attachment.delete()` fails after `deleteFile()`, the file is gone but the DB record remains, causing 404s on future access. Fix: delete DB record first, then file.
+- **Non-atomic diagram version pruning** (`app/actions/diagrams.ts:117-126, 213-221`): Uses 3 sequential queries (count, findMany, deleteMany) without a transaction. Race condition under concurrent saves. Fix: wrap in `prisma.$transaction` or use a single subquery-based delete.
+- **`deleteSystem` fails silently with FK constraints** (`app/actions/systems.ts`): Deleting a system with attached devices fails due to required FK, but returns a generic "Failed to delete" error. Fix: cascade or check for dependents and return a descriptive error.
+- **Stale log data when search params cleared** (`components/logs/device-log-list.tsx:81-85`): `fetchLogs` not re-invoked when search params are cleared, leaving stale results visible.
+
+### Performance (High/Medium)
+
+- **Unbounded uptime history query** (`app/actions/uptime.ts:50-62`): Fetches entire `deviceStatusHistory` for a device over the date window into memory just to count statuses and slice to 50. Fix: use `groupBy` for counters + separate `findMany({ take: 50 })` for display.
+- **`getSystem` fetches all related records with no limit** (`app/actions/systems.ts:85-109`): All diagrams, documents, assets, devices, and racks for a system loaded in one query with no pagination. Fix: add `take` limits or paginate sub-relations.
+- **CSV imports create records one-by-one** (`app/actions/csv.ts`): Loop of individual `prisma.create()` calls instead of `createMany` for bulk operations. Fix: batch inserts with `createMany`.
+- **Diagram version pruning uses 3 round-trips** (`app/actions/diagrams.ts`): count + findMany + deleteMany on every save. Fix: collapse to a single conditional delete using a pivot timestamp.
+- **Large client-side imports**: Excalidraw and React Flow are loaded eagerly. Consider `next/dynamic` with `ssr: false` for code splitting.
+- **SSE polls all devices per connected client** (`app/api/events/devices/route.ts`): Each SSE client creates its own independent `setInterval` polling the DB every 5s. No shared broadcaster. Fix: use a module-level singleton that polls once and fans out to all clients.
+- **`getFilteredDevices`/`getFilteredAssets` are unbounded** (`app/actions/devices.ts:66`, `app/actions/assets.ts:63`): No `take` limit on filtered list queries. Fix: add pagination parameters.
+- **`getNodeTypeConfig` uses linear array search** (`components/diagrams/node-types.ts:281`): Called per node render during pan/zoom/drag. Fix: export a pre-built `Map` for O(1) lookup.
+- **`groupedNodes` recomputed on every render** (`components/diagrams/diagram-editor.tsx:38`): Derived from static data but not memoized. Fix: move to module-level constant.
+- **Direct Prisma calls in page components** (`app/(dashboard)/diagrams/[id]/edit/page.tsx`): Bypasses auth layer and is inconsistent with project patterns. Fix: use existing server actions.
+- **Missing database indexes**: Add indexes on `Device.status`, `Device.systemId`, `Device.deviceType`, `System.status`, `System.category`, `Asset.status`, `Asset.systemId`, `DeviceLog.timestamp`, `DeviceLog.level`, `DeviceLog.source`.
+
 ## Roadmap
 
 See `PLAN.md` for full architecture and development roadmap. Phase 1 (MVP) and Phase 2 (Enhanced Docs) are complete. Phase 3 (SIEM-Lite: device monitoring, syslog, SNMP, alerts, retention) is in progress.

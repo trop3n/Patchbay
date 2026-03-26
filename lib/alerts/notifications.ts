@@ -1,3 +1,4 @@
+import { resolve } from 'dns/promises'
 import { alertConfig } from './config'
 import type { AlertSeverity } from './config'
 
@@ -54,7 +55,29 @@ export function validateWebhookUrl(urlString: string): { valid: boolean; error?:
     return { valid: false, error: 'Webhook URL must use a public hostname, not an IP address literal' }
   }
 
+  // Block single-label hostnames (no dot) that could reach intranet services
+  if (!url.hostname.includes('.')) {
+    return { valid: false, error: 'Webhook URL must use a fully qualified domain name' }
+  }
+
   return { valid: true }
+}
+
+async function resolveAndValidateHost(hostname: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const addresses = await resolve(hostname)
+    for (const addr of addresses) {
+      if (isPrivateIP(addr)) {
+        return { valid: false, error: `Webhook hostname resolves to private IP address` }
+      }
+      if (BLOCKED_HOSTNAMES.has(addr)) {
+        return { valid: false, error: `Webhook hostname resolves to a blocked address` }
+      }
+    }
+    return { valid: true }
+  } catch {
+    return { valid: false, error: 'Could not resolve webhook hostname' }
+  }
 }
 
 interface AlertNotification {
@@ -104,6 +127,13 @@ export async function sendWebhookNotification(
   const urlCheck = validateWebhookUrl(webhookUrl)
   if (!urlCheck.valid) {
     console.error(`[Alerts] Webhook URL rejected: ${urlCheck.error}`)
+    return false
+  }
+
+  const url = new URL(webhookUrl)
+  const dnsCheck = await resolveAndValidateHost(url.hostname)
+  if (!dnsCheck.valid) {
+    console.error(`[Alerts] Webhook DNS check failed: ${dnsCheck.error}`)
     return false
   }
 

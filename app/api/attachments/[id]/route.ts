@@ -28,7 +28,7 @@ export async function GET(
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': attachment.mimeType,
-        'Content-Disposition': `attachment; filename="${attachment.originalName}"`,
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(attachment.originalName)}`,
         'Content-Length': attachment.size.toString(),
       },
     })

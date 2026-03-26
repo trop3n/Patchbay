@@ -1,7 +1,9 @@
 'use client'
 
+import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import sanitizeHtml from 'sanitize-html'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ContentTypeValue } from '@/lib/validations/document'
 
@@ -10,7 +12,24 @@ interface DocumentViewerProps {
   contentType: ContentTypeValue
 }
 
+// Content is sanitized via sanitize-html before rendering to prevent stored XSS
 export function DocumentViewer({ content, contentType }: DocumentViewerProps) {
+  const sanitizedContent = useMemo(() => {
+    if (contentType === 'RICH_TEXT' && content) {
+      return sanitizeHtml(content, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'u', 's', 'sub', 'sup']),
+        allowedAttributes: {
+          ...sanitizeHtml.defaults.allowedAttributes,
+          img: ['src', 'alt', 'width', 'height'],
+          a: ['href', 'target', 'rel'],
+          '*': ['class', 'style'],
+        },
+        allowedSchemes: ['http', 'https', 'mailto'],
+      })
+    }
+    return content
+  }, [content, contentType])
+
   if (!content) {
     return (
       <Card>
@@ -25,9 +44,9 @@ export function DocumentViewer({ content, contentType }: DocumentViewerProps) {
     case 'RICH_TEXT':
       return (
         <Card>
-          <CardContent 
+          <CardContent
             className="prose prose-sm dark:prose-invert max-w-none pt-6"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         </Card>
       )
