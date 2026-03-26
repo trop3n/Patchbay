@@ -8,6 +8,16 @@ import { createAuditLog, sanitizeForAudit } from '@/lib/audit'
 import { canWrite } from '@/lib/authorize'
 import type { SystemStatus } from '@prisma/client'
 
+export async function getSystemSelectOptions() {
+  const session = await auth()
+  if (!session) throw new Error('Unauthorized')
+
+  return prisma.system.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+}
+
 export async function getSystems() {
   const session = await auth()
   if (!session) throw new Error('Unauthorized')
@@ -88,22 +98,28 @@ export async function getSystem(id: string) {
       createdBy: { select: { name: true, username: true, email: true } },
       diagrams: {
         orderBy: { createdAt: 'desc' },
+        take: 50,
         include: { createdBy: { select: { name: true, username: true } } },
       },
       documents: {
         orderBy: { createdAt: 'desc' },
+        take: 50,
         include: { createdBy: { select: { name: true, username: true } } },
       },
       assets: {
         orderBy: { name: 'asc' },
+        take: 100,
       },
       devices: {
         orderBy: { name: 'asc' },
+        take: 100,
       },
       attachments: {
         orderBy: { createdAt: 'desc' },
+        take: 50,
         include: { createdBy: { select: { name: true, username: true } } },
       },
+      _count: { select: { diagrams: true, documents: true, assets: true, devices: true, attachments: true } },
     },
   })
 }

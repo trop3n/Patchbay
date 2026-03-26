@@ -47,71 +47,57 @@ export async function getDeviceUptimeStats(
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  const history = await prisma.deviceStatusHistory.findMany({
-    where: {
-      deviceId,
-      recordedAt: { gte: startDate },
-    },
-    select: {
-      status: true,
-      previousStatus: true,
-      source: true,
-      recordedAt: true,
-    },
-    orderBy: { recordedAt: 'desc' },
-  })
-
   const last24Hours = new Date()
   last24Hours.setHours(last24Hours.getHours() - 24)
+
+  const [allTimeCounts, last24hCounts, recentHistory] = await Promise.all([
+    prisma.deviceStatusHistory.groupBy({
+      by: ['status'],
+      where: { deviceId, recordedAt: { gte: startDate } },
+      _count: true,
+    }),
+    prisma.deviceStatusHistory.groupBy({
+      by: ['status'],
+      where: { deviceId, recordedAt: { gte: last24Hours } },
+      _count: true,
+    }),
+    prisma.deviceStatusHistory.findMany({
+      where: { deviceId, recordedAt: { gte: startDate } },
+      select: { status: true, previousStatus: true, source: true, recordedAt: true },
+      orderBy: { recordedAt: 'desc' },
+      take: 50,
+    }),
+  ])
+
+  const countByStatus = (groups: typeof allTimeCounts, status: DeviceStatus) =>
+    groups.find((g) => g.status === status)?._count ?? 0
+
+  const onlineCount = countByStatus(allTimeCounts, 'ONLINE')
+  const offlineCount = countByStatus(allTimeCounts, 'OFFLINE')
+  const warningCount = countByStatus(allTimeCounts, 'WARNING')
+  const errorCount = countByStatus(allTimeCounts, 'ERROR')
+  const unknownCount = countByStatus(allTimeCounts, 'UNKNOWN')
+  const totalChecks = allTimeCounts.reduce((sum, g) => sum + g._count, 0)
 
   const stats: DeviceUptimeStats = {
     deviceId,
     deviceName: device.name,
     currentStatus: device.status,
-    totalChecks: history.length,
-    onlineCount: 0,
-    offlineCount: 0,
-    warningCount: 0,
-    errorCount: 0,
-    unknownCount: 0,
-    uptimePercentage: 0,
+    totalChecks,
+    onlineCount,
+    offlineCount,
+    warningCount,
+    errorCount,
+    unknownCount,
+    uptimePercentage: totalChecks > 0 ? (onlineCount / totalChecks) * 100 : 0,
     last24Hours: {
-      online: 0,
-      offline: 0,
-      warning: 0,
-      error: 0,
-      unknown: 0,
+      online: countByStatus(last24hCounts, 'ONLINE'),
+      offline: countByStatus(last24hCounts, 'OFFLINE'),
+      warning: countByStatus(last24hCounts, 'WARNING'),
+      error: countByStatus(last24hCounts, 'ERROR'),
+      unknown: countByStatus(last24hCounts, 'UNKNOWN'),
     },
-    recentHistory: history.slice(0, 50),
-  }
-
-  for (const record of history) {
-    switch (record.status) {
-      case 'ONLINE':
-        stats.onlineCount++
-        if (record.recordedAt >= last24Hours) stats.last24Hours.online++
-        break
-      case 'OFFLINE':
-        stats.offlineCount++
-        if (record.recordedAt >= last24Hours) stats.last24Hours.offline++
-        break
-      case 'WARNING':
-        stats.warningCount++
-        if (record.recordedAt >= last24Hours) stats.last24Hours.warning++
-        break
-      case 'ERROR':
-        stats.errorCount++
-        if (record.recordedAt >= last24Hours) stats.last24Hours.error++
-        break
-      case 'UNKNOWN':
-        stats.unknownCount++
-        if (record.recordedAt >= last24Hours) stats.last24Hours.unknown++
-        break
-    }
-  }
-
-  if (stats.totalChecks > 0) {
-    stats.uptimePercentage = (stats.onlineCount / stats.totalChecks) * 100
+    recentHistory,
   }
 
   return stats

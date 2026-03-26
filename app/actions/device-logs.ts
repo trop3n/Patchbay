@@ -111,6 +111,7 @@ export async function getLogFilterOptions() {
     prisma.deviceLog.findMany({
       select: { source: true },
       distinct: ['source'],
+      take: 100,
     }),
   ])
 

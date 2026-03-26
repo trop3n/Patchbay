@@ -121,6 +121,8 @@ model System {
   alertThresholds AlertThreshold[]
   alerts          Alert[]
 
+  @@index([status])
+  @@index([category])
   @@map("systems")
 }
 
@@ -192,6 +194,8 @@ model Asset {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  @@index([status])
+  @@index([systemId])
   @@map("assets")
 }
 
@@ -222,6 +226,9 @@ model Device {
 
   @@index([ipAddress])
   @@index([snmpEnabled])
+  @@index([status])
+  @@index([systemId])
+  @@index([deviceType])
   @@map("devices")
 }
 
@@ -249,6 +256,9 @@ model DeviceLog {
   timestamp DateTime @default(now())
 
   @@index([deviceId, timestamp])
+  @@index([timestamp])
+  @@index([level])
+  @@index([source])
   @@map("device_logs")
 }
 

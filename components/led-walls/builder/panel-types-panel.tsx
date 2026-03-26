@@ -89,7 +89,8 @@ export function PanelTypesPanel() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleRemovePanel(specId) }}
-              className="p-0.5 text-zinc-500 hover:text-red-400 transition-colors shrink-0"
+              className="p-0.5 text-zinc-500 hover:text-red-400 transition-colors shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              aria-label={`Remove ${spec.brand} ${spec.model}`}
             >
               <X className="w-3 h-3" />
             </button>

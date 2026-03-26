@@ -93,13 +93,14 @@ export function AttachmentList({ attachments, canDelete = false, onDeleted }: At
                 variant="ghost"
                 size="sm"
                 onClick={() => handleDownload(attachment.id)}
+                aria-label={`Download ${attachment.originalName}`}
               >
                 <Download className="w-4 h-4" />
               </Button>
               {canDelete && (
                 <Dialog open={deleteId === attachment.id} onOpenChange={(open) => setDeleteId(open ? attachment.id : null)}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" aria-label={`Delete ${attachment.originalName}`}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </DialogTrigger>

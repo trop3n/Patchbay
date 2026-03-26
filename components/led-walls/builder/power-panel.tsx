@@ -116,14 +116,16 @@ export function PowerPanel() {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); openEdit(pl) }}
-                className="p-1 text-zinc-400 hover:text-white transition-colors"
+                className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                aria-label={`Edit ${pl.name}`}
               >
                 <Zap className="w-3 h-3" />
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); dispatch({ type: 'DELETE_POWER_LINE', id: pl.id }) }}
-                className="p-1 text-zinc-400 hover:text-red-400 transition-colors"
+                className="p-1 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                aria-label={`Delete ${pl.name}`}
               >
                 <Trash2 className="w-3 h-3" />
               </button>

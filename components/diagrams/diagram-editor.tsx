@@ -18,6 +18,14 @@ import { nodeTypes as availableNodeTypes, type NodeType } from './node-types'
 
 const nodeTypes = { avNode: AVNode }
 
+const groupedNodes = availableNodeTypes.reduce<Record<string, typeof availableNodeTypes[number][]>>((acc, node) => {
+  if (!acc[node.category]) {
+    acc[node.category] = []
+  }
+  acc[node.category].push(node)
+  return acc
+}, {})
+
 interface DiagramEditorProps {
   nodes: Node[]
   edges: Edge[]
@@ -35,13 +43,6 @@ export default function DiagramEditor({
   onConnect,
   onAddNode,
 }: DiagramEditorProps) {
-  const groupedNodes = availableNodeTypes.reduce<Record<string, typeof availableNodeTypes[number][]>>((acc, node) => {
-    if (!acc[node.category]) {
-      acc[node.category] = []
-    }
-    acc[node.category].push(node)
-    return acc
-  }, {})
 
   return (
     <div className="h-[600px] border rounded-lg">

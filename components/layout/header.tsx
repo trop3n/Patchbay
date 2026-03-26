@@ -58,7 +58,7 @@ export function Header({ user }: HeaderProps) {
         <span className="text-sm text-muted-foreground hidden sm:block">{user.name || user.username}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full" aria-label="Open user menu">
               <Avatar className="h-8 w-8">
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>

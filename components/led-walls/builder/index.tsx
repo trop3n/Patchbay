@@ -135,7 +135,8 @@ export default function LedWallBuilderV2({ initialData, onChange, readOnly }: Le
                         <Zap className="w-3 h-3" />
                         Power
                       </button>
-                      <div
+                      <button
+                        type="button"
                         onClick={() => dispatch({
                           type: 'SET_WIRING_DISPLAY',
                           mode: state.wiringDisplay === 'power' ? 'signal' : 'power',
@@ -144,14 +145,15 @@ export default function LedWallBuilderV2({ initialData, onChange, readOnly }: Le
                           'w-8 h-4 rounded-full cursor-pointer transition-colors relative',
                           state.wiringDisplay === 'signal' ? 'bg-emerald-600' : 'bg-zinc-600',
                         )}
+                        aria-label={`Switch to ${state.wiringDisplay === 'power' ? 'signal' : 'power'} wiring display`}
                       >
                         <div
                           className={cn(
-                            'w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all',
+                            'w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all pointer-events-none',
                             state.wiringDisplay === 'signal' ? 'left-4' : 'left-0.5',
                           )}
                         />
-                      </div>
+                      </button>
                       <button
                         type="button"
                         onClick={() => dispatch({ type: 'SET_WIRING_DISPLAY', mode: 'signal' })}
@@ -181,7 +183,8 @@ export default function LedWallBuilderV2({ initialData, onChange, readOnly }: Le
               <button
                 type="button"
                 onClick={() => setSidebarOpen((prev) => !prev)}
-                className="shrink-0 w-5 flex items-center justify-center bg-zinc-900 border-r border-zinc-800 hover:bg-zinc-800 transition-colors"
+                className="shrink-0 w-5 flex items-center justify-center bg-zinc-900 border-r border-zinc-800 hover:bg-zinc-800 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
               >
                 {sidebarOpen ? (
                   <ChevronLeft className="w-3.5 h-3.5 text-zinc-500" />

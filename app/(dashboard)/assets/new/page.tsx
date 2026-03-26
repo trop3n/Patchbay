@@ -1,13 +1,10 @@
-import { prisma } from '@/lib/prisma'
+import { getSystemSelectOptions } from '@/app/actions/systems'
 import { AssetForm } from '@/components/assets/asset-form'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NewAssetPage() {
-  const systems = await prisma.system.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  })
+  const systems = await getSystemSelectOptions()
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { getSystemSelectOptions } from '@/app/actions/systems'
 import { getRack } from '@/app/actions/racks'
 import { RackEditForm } from '@/components/racks/rack-edit-form'
 
@@ -11,10 +12,7 @@ export default async function EditRackPage({ params }: EditRackPageProps) {
   const { id } = await params
   const [rack, systems, assets] = await Promise.all([
     getRack(id),
-    prisma.system.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
+    getSystemSelectOptions(),
     prisma.asset.findMany({
       select: { id: true, name: true, manufacturer: true, model: true },
       orderBy: { name: 'asc' },

@@ -48,7 +48,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
         size="sm"
         className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
         onClick={handleZoomOut}
-        title="Zoom out"
+        aria-label="Zoom out"
       >
         <ZoomOut className="w-3.5 h-3.5" />
       </Button>
@@ -58,7 +58,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
         size="sm"
         className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
         onClick={handleZoomIn}
-        title="Zoom in"
+        aria-label="Zoom in"
       >
         <ZoomIn className="w-3.5 h-3.5" />
       </Button>
@@ -71,7 +71,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
         size="sm"
         className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
         onClick={onResetView}
-        title="Reset view"
+        aria-label="Reset view"
       >
         <Maximize className="w-3.5 h-3.5" />
       </Button>
@@ -125,7 +125,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
         className="h-7 w-7 p-0 text-zinc-400 hover:text-white disabled:opacity-30"
         onClick={() => dispatch({ type: 'UNDO' })}
         disabled={state.undoStack.length === 0}
-        title="Undo"
+        aria-label="Undo"
       >
         <Undo2 className="w-3.5 h-3.5" />
       </Button>
@@ -136,7 +136,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
         className="h-7 w-7 p-0 text-zinc-400 hover:text-white disabled:opacity-30"
         onClick={() => dispatch({ type: 'REDO' })}
         disabled={state.redoStack.length === 0}
-        title="Redo"
+        aria-label="Redo"
       >
         <Redo2 className="w-3.5 h-3.5" />
       </Button>

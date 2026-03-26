@@ -170,7 +170,8 @@ function ControllerCard({ controller, spec, state, onPortClick, onDelete }: Cont
           <button
             type="button"
             onClick={() => onDelete(controller.id)}
-            className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+            className="p-1 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+            aria-label={`Delete ${controller.name}`}
           >
             <X className="w-3 h-3" />
           </button>

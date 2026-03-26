@@ -89,6 +89,7 @@ export function AttachmentUpload({ systemId, documentId, onUploaded }: Attachmen
               size="sm"
               onClick={handleClear}
               disabled={isUploading}
+              aria-label="Clear selected file"
             >
               <X className="w-4 h-4" />
             </Button>

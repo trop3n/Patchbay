@@ -87,7 +87,7 @@ export function PanelPalette({ layoutType, onAddPanel, onAddStrip, onAddProcesso
                             P{panel.pixelPitch} &middot; {panel.widthMm}x{panel.heightMm}mm
                           </p>
                         </div>
-                        <Button size="sm" variant="ghost" onClick={() => onAddPanel(panel)}>
+                        <Button size="sm" variant="ghost" onClick={() => onAddPanel(panel)} aria-label={`Add ${panel.model}`}>
                           <Plus className="w-4 h-4" />
                         </Button>
                       </div>
@@ -121,7 +121,7 @@ export function PanelPalette({ layoutType, onAddPanel, onAddStrip, onAddProcesso
                 <p className="font-medium truncate">{proc.brand} {proc.model}</p>
                 <p className="text-xs text-muted-foreground">{proc.outputs} outputs</p>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => onAddProcessor(proc)}>
+              <Button size="sm" variant="ghost" onClick={() => onAddProcessor(proc)} aria-label={`Add ${proc.brand} ${proc.model}`}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

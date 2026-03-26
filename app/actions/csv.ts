@@ -8,6 +8,7 @@ import { deviceSchema } from '@/lib/validations/device'
 import { assetSchema } from '@/lib/validations/asset'
 import { createAuditLog } from '@/lib/audit'
 import { canWrite } from '@/lib/authorize'
+import type { AssetStatus, DeviceStatus, SnmpVersion } from '@prisma/client'
 import Papa from 'papaparse'
 
 type ImportResult = { created: number; errors: string[] }
@@ -94,8 +95,21 @@ export async function importDevices(
   })
   const slugToId = new Map(systems.map((s) => [s.slug, s.id]))
 
-  let created = 0
   const errors: string[] = []
+  const validRows: Array<{
+    name: string
+    systemId: string
+    ipAddress: string | null
+    macAddress: string | null
+    deviceType: string | null
+    manufacturer: string | null
+    model: string | null
+    status: DeviceStatus
+    snmpEnabled: boolean
+    snmpVersion: SnmpVersion | null
+    snmpCommunity: string | null
+    snmpPort: number
+  }> = []
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
@@ -137,30 +151,27 @@ export async function importDevices(
       continue
     }
 
-    try {
-      await prisma.device.create({
-        data: {
-          name: parsed.data.name,
-          systemId: parsed.data.systemId,
-          ipAddress: parsed.data.ipAddress || null,
-          macAddress: parsed.data.macAddress || null,
-          deviceType: parsed.data.deviceType || null,
-          manufacturer: parsed.data.manufacturer || null,
-          model: parsed.data.model || null,
-          status: parsed.data.status || 'UNKNOWN',
-          snmpEnabled: parsed.data.snmpEnabled ?? false,
-          snmpVersion: parsed.data.snmpVersion || null,
-          snmpCommunity: parsed.data.snmpCommunity || null,
-          snmpPort: parsed.data.snmpPort ?? 161,
-        },
-      })
-      created++
-    } catch {
-      errors.push(`Row ${rowNum}: failed to create device`)
-    }
+    validRows.push({
+      name: parsed.data.name,
+      systemId: parsed.data.systemId,
+      ipAddress: parsed.data.ipAddress || null,
+      macAddress: parsed.data.macAddress || null,
+      deviceType: parsed.data.deviceType || null,
+      manufacturer: parsed.data.manufacturer || null,
+      model: parsed.data.model || null,
+      status: (parsed.data.status || 'UNKNOWN') as DeviceStatus,
+      snmpEnabled: parsed.data.snmpEnabled ?? false,
+      snmpVersion: (parsed.data.snmpVersion || null) as SnmpVersion | null,
+      snmpCommunity: parsed.data.snmpCommunity || null,
+      snmpPort: parsed.data.snmpPort ?? 161,
+    })
   }
 
-  if (created > 0) {
+  let created = 0
+  if (validRows.length > 0) {
+    const result = await prisma.device.createMany({ data: validRows })
+    created = result.count
+
     await createAuditLog({
       action: 'CREATE',
       entityType: 'Device',
@@ -194,8 +205,20 @@ export async function importAssets(
     for (const s of systems) slugToId.set(s.slug, s.id)
   }
 
-  let created = 0
   const errors: string[] = []
+  const validRows: Array<{
+    name: string
+    serialNumber?: string
+    manufacturer?: string
+    model?: string
+    purchaseDate?: Date
+    warrantyEnd?: Date
+    location?: string
+    status?: AssetStatus
+    notes?: string
+    systemId: string | null
+    createdById: string
+  }> = []
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
@@ -231,22 +254,26 @@ export async function importAssets(
       continue
     }
 
-    try {
-      await prisma.asset.create({
-        data: {
-          ...parsed.data,
-          purchaseDate: parsed.data.purchaseDate ? new Date(parsed.data.purchaseDate) : undefined,
-          warrantyEnd: parsed.data.warrantyEnd ? new Date(parsed.data.warrantyEnd) : undefined,
-          createdById: session.user.id,
-        },
-      })
-      created++
-    } catch {
-      errors.push(`Row ${rowNum}: failed to create asset`)
-    }
+    validRows.push({
+      name: parsed.data.name,
+      serialNumber: parsed.data.serialNumber,
+      manufacturer: parsed.data.manufacturer,
+      model: parsed.data.model,
+      purchaseDate: parsed.data.purchaseDate ? new Date(parsed.data.purchaseDate) : undefined,
+      warrantyEnd: parsed.data.warrantyEnd ? new Date(parsed.data.warrantyEnd) : undefined,
+      location: parsed.data.location,
+      status: parsed.data.status,
+      notes: parsed.data.notes,
+      systemId: parsed.data.systemId ?? null,
+      createdById: session.user.id,
+    })
   }
 
-  if (created > 0) {
+  let created = 0
+  if (validRows.length > 0) {
+    const result = await prisma.asset.createMany({ data: validRows })
+    created = result.count
+
     await createAuditLog({
       action: 'CREATE',
       entityType: 'Asset',

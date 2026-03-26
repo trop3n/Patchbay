@@ -58,6 +58,7 @@ export function RackUnitRow({ unit, onRemove, onMoveUp, onMoveDown, isFirst, isL
           className="h-5 w-5"
           onClick={onMoveUp}
           disabled={isFirst}
+          aria-label="Move unit up"
         >
           <ChevronUp className="w-3 h-3" />
         </Button>
@@ -67,10 +68,11 @@ export function RackUnitRow({ unit, onRemove, onMoveUp, onMoveDown, isFirst, isL
           className="h-5 w-5"
           onClick={onMoveDown}
           disabled={isLast}
+          aria-label="Move unit down"
         >
           <ChevronDown className="w-3 h-3" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:text-destructive" onClick={onRemove}>
+        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:text-destructive" onClick={onRemove} aria-label="Remove unit">
           <Trash2 className="w-3 h-3" />
         </Button>
       </div>

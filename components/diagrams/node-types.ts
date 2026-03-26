@@ -278,8 +278,10 @@ export type NodeType = typeof nodeTypes[number]['type']
 
 export const nodeCategories = ['Video', 'Audio', 'Control', 'Network', 'Generic'] as const
 
+const nodeTypeMap = new Map(nodeTypes.map((n) => [n.type, n]))
+
 export function getNodeTypeConfig(type: string): NodeTypeConfig | undefined {
-  return nodeTypes.find((n) => n.type === type)
+  return nodeTypeMap.get(type)
 }
 
 export const nodeColors: Record<string, { border: string; bg: string }> = {

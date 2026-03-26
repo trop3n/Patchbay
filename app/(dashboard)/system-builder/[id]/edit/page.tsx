@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
+import { getSystemSelectOptions } from '@/app/actions/systems'
 import { getSystemBuild } from '@/app/actions/system-builds'
 import { SystemBuildEditForm } from '@/components/system-builder/system-build-edit-form'
 
@@ -11,10 +11,7 @@ export default async function EditSystemBuildPage({ params }: EditSystemBuildPag
   const { id } = await params
   const [build, systems] = await Promise.all([
     getSystemBuild(id),
-    prisma.system.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
+    getSystemSelectOptions(),
   ])
 
   if (!build) {

@@ -110,19 +110,11 @@ Optional: `SYSLOG_*`, `SNMP_*`, `ALERT_*`, `SMTP_*` (see `.env.example`)
 - **`deleteSystem` fails silently with FK constraints** (`app/actions/systems.ts`): Deleting a system with attached devices fails due to required FK, but returns a generic "Failed to delete" error. Fix: cascade or check for dependents and return a descriptive error.
 - **Stale log data when search params cleared** (`components/logs/device-log-list.tsx:81-85`): `fetchLogs` not re-invoked when search params are cleared, leaving stale results visible.
 
-### Performance (High/Medium)
+### Performance (Remaining)
 
-- **Unbounded uptime history query** (`app/actions/uptime.ts:50-62`): Fetches entire `deviceStatusHistory` for a device over the date window into memory just to count statuses and slice to 50. Fix: use `groupBy` for counters + separate `findMany({ take: 50 })` for display.
-- **`getSystem` fetches all related records with no limit** (`app/actions/systems.ts:85-109`): All diagrams, documents, assets, devices, and racks for a system loaded in one query with no pagination. Fix: add `take` limits or paginate sub-relations.
-- **CSV imports create records one-by-one** (`app/actions/csv.ts`): Loop of individual `prisma.create()` calls instead of `createMany` for bulk operations. Fix: batch inserts with `createMany`.
-- **Diagram version pruning uses 3 round-trips** (`app/actions/diagrams.ts`): count + findMany + deleteMany on every save. Fix: collapse to a single conditional delete using a pivot timestamp.
-- **Large client-side imports**: Excalidraw and React Flow are loaded eagerly. Consider `next/dynamic` with `ssr: false` for code splitting.
 - **SSE polls all devices per connected client** (`app/api/events/devices/route.ts`): Each SSE client creates its own independent `setInterval` polling the DB every 5s. No shared broadcaster. Fix: use a module-level singleton that polls once and fans out to all clients.
-- **`getFilteredDevices`/`getFilteredAssets` are unbounded** (`app/actions/devices.ts:66`, `app/actions/assets.ts:63`): No `take` limit on filtered list queries. Fix: add pagination parameters.
-- **`getNodeTypeConfig` uses linear array search** (`components/diagrams/node-types.ts:281`): Called per node render during pan/zoom/drag. Fix: export a pre-built `Map` for O(1) lookup.
-- **`groupedNodes` recomputed on every render** (`components/diagrams/diagram-editor.tsx:38`): Derived from static data but not memoized. Fix: move to module-level constant.
-- **Direct Prisma calls in page components** (`app/(dashboard)/diagrams/[id]/edit/page.tsx`): Bypasses auth layer and is inconsistent with project patterns. Fix: use existing server actions.
-- **Missing database indexes**: Add indexes on `Device.status`, `Device.systemId`, `Device.deviceType`, `System.status`, `System.category`, `Asset.status`, `Asset.systemId`, `DeviceLog.timestamp`, `DeviceLog.level`, `DeviceLog.source`.
+- **`getFilteredDevices`/`getFilteredAssets` are unbounded** (`app/actions/devices.ts:66`, `app/actions/assets.ts:63`): No `take` limit on filtered list queries. Fix: add pagination parameters and UI controls.
+- **Note**: Run `npx prisma migrate dev` to apply the new database indexes added to `prisma/schema.prisma`.
 
 ## Roadmap
 
