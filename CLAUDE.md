@@ -103,7 +103,7 @@ Optional: `SYSLOG_*`, `SNMP_*`, `ALERT_*`, `SMTP_*` (see `.env.example`)
 ### Bugs (High/Medium)
 
 - **CSV export crashes when device has no system** (`app/actions/csv.ts:297`): `d.system.slug` throws `TypeError` if system is null. Fix: add null check (`d.system?.slug ?? ''`).
-- **Cannot disassociate device from system** (`app/actions/devices.ts:183`): `updateDevice` only sets `systemId` when truthy; passing `null` or empty string is silently ignored. Fix: handle explicit null to disconnect the relation.
+- **~~Cannot disassociate device from system~~** (`app/actions/devices.ts:183`): `systemId` is required on Device, so disassociation is by design. System reassignment via truthy `systemId` works correctly.
 - **SSE stream leak on early disconnect** (`app/api/events/devices/route.ts`): Abort listener registered after initial async `fetchDevices()` call — if client disconnects during that await, the interval is never cleaned up. Also, uncaught throw from `fetchDevices()` leaves the controller unclosed.
 - **File deleted before DB record in attachment deletion** (`app/actions/attachments.ts:112-113`): If `prisma.attachment.delete()` fails after `deleteFile()`, the file is gone but the DB record remains, causing 404s on future access. Fix: delete DB record first, then file.
 - **Non-atomic diagram version pruning** (`app/actions/diagrams.ts:117-126, 213-221`): Uses 3 sequential queries (count, findMany, deleteMany) without a transaction. Race condition under concurrent saves. Fix: wrap in `prisma.$transaction` or use a single subquery-based delete.

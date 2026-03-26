@@ -180,7 +180,7 @@ export async function updateDevice(id: string, data: DeviceUpdateInput) {
         snmpVersion: validated.data.snmpVersion,
         snmpCommunity: validated.data.snmpCommunity,
         snmpPort: validated.data.snmpPort,
-        ...(validated.data.systemId && { system: { connect: { id: validated.data.systemId } } }),
+        ...(validated.data.systemId ? { system: { connect: { id: validated.data.systemId } } } : {}),
       },
     })
     await createAuditLog({

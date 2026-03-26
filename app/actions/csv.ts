@@ -294,7 +294,7 @@ export async function exportDevices(): Promise<string> {
 
   const rows = devices.map((d) => ({
     name: d.name,
-    systemSlug: d.system.slug,
+    systemSlug: d.system?.slug ?? '',
     ipAddress: d.ipAddress ?? '',
     macAddress: d.macAddress ?? '',
     deviceType: d.deviceType ?? '',

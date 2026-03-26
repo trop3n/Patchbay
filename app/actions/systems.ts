@@ -181,14 +181,35 @@ export async function deleteSystem(id: string) {
   }
 
   try {
-    const system = await prisma.system.findUnique({ where: { id } })
+    const system = await prisma.system.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { devices: true, diagrams: true, documents: true, assets: true, racks: true } },
+      },
+    })
+
+    if (!system) {
+      return { error: 'System not found' }
+    }
+
+    const deps: string[] = []
+    if (system._count.devices > 0) deps.push(`${system._count.devices} device(s)`)
+    if (system._count.diagrams > 0) deps.push(`${system._count.diagrams} diagram(s)`)
+    if (system._count.documents > 0) deps.push(`${system._count.documents} document(s)`)
+    if (system._count.assets > 0) deps.push(`${system._count.assets} asset(s)`)
+    if (system._count.racks > 0) deps.push(`${system._count.racks} rack(s)`)
+
+    if (deps.length > 0) {
+      return { error: `Cannot delete system: it still has ${deps.join(', ')}. Remove or reassign them first.` }
+    }
+
     await prisma.system.delete({ where: { id } })
     await createAuditLog({
       action: 'DELETE',
       entityType: 'System',
       entityId: id,
       userId: session.user.id,
-      changes: { before: system ? sanitizeForAudit(system) : undefined },
+      changes: { before: sanitizeForAudit(system) },
     })
     revalidatePath('/systems')
     return { success: true }

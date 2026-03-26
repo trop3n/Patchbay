@@ -109,8 +109,8 @@ export async function deleteAttachment(id: string) {
       return { error: 'Attachment not found' }
     }
 
-    await deleteFile(attachment.path)
     await prisma.attachment.delete({ where: { id } })
+    await deleteFile(attachment.path)
 
     if (attachment.systemId) {
       revalidatePath(`/systems/${attachment.systemId}`)

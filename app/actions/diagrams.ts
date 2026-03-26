@@ -105,25 +105,28 @@ export async function updateDiagram(id: string, input: UpdateDiagramInput) {
 
     // Snapshot the current state before updating
     if (before) {
-      await prisma.diagramVersion.create({
-        data: {
-          diagramId: id,
-          title: before.title,
-          data: before.data as object,
-          savedById: session.user.id,
-        },
-      })
-      // Prune to keep max 50 versions per diagram
-      const count = await prisma.diagramVersion.count({ where: { diagramId: id } })
-      if (count > 50) {
-        const oldest = await prisma.diagramVersion.findMany({
-          where: { diagramId: id },
-          orderBy: { createdAt: 'asc' },
-          take: count - 50,
-          select: { id: true },
+      await prisma.$transaction(async (tx) => {
+        await tx.diagramVersion.create({
+          data: {
+            diagramId: id,
+            title: before.title,
+            data: before.data as object,
+            savedById: session.user.id,
+          },
         })
-        await prisma.diagramVersion.deleteMany({ where: { id: { in: oldest.map((v) => v.id) } } })
-      }
+        // Prune to keep max 50 versions per diagram
+        const pivot = await tx.diagramVersion.findFirst({
+          where: { diagramId: id },
+          orderBy: { createdAt: 'desc' },
+          skip: 50,
+          select: { createdAt: true },
+        })
+        if (pivot) {
+          await tx.diagramVersion.deleteMany({
+            where: { diagramId: id, createdAt: { lte: pivot.createdAt } },
+          })
+        }
+      })
     }
 
     const diagram = await prisma.diagram.update({
@@ -199,27 +202,28 @@ export async function restoreDiagramVersion(versionId: string) {
     const current = await prisma.diagram.findUnique({ where: { id: version.diagramId } })
     if (!current) return { error: 'Diagram not found' }
 
-    // Snapshot current state as an undo point before restoring
-    await prisma.diagramVersion.create({
-      data: {
-        diagramId: current.id,
-        title: current.title,
-        data: current.data as object,
-        savedById: session.user.id,
-      },
-    })
-
-    // Prune to keep max 50 versions per diagram
-    const count = await prisma.diagramVersion.count({ where: { diagramId: current.id } })
-    if (count > 50) {
-      const oldest = await prisma.diagramVersion.findMany({
-        where: { diagramId: current.id },
-        orderBy: { createdAt: 'asc' },
-        take: count - 50,
-        select: { id: true },
+    // Snapshot current state as an undo point before restoring, then prune
+    await prisma.$transaction(async (tx) => {
+      await tx.diagramVersion.create({
+        data: {
+          diagramId: current.id,
+          title: current.title,
+          data: current.data as object,
+          savedById: session.user.id,
+        },
       })
-      await prisma.diagramVersion.deleteMany({ where: { id: { in: oldest.map((v) => v.id) } } })
-    }
+      const pivot = await tx.diagramVersion.findFirst({
+        where: { diagramId: current.id },
+        orderBy: { createdAt: 'desc' },
+        skip: 50,
+        select: { createdAt: true },
+      })
+      if (pivot) {
+        await tx.diagramVersion.deleteMany({
+          where: { diagramId: current.id, createdAt: { lte: pivot.createdAt } },
+        })
+      }
+    })
 
     await prisma.diagram.update({
       where: { id: current.id },
