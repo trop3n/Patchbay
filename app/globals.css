@@ -123,3 +123,22 @@
     transform: none;
   }
 }
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -12; }
+}
+
+.system-builder-canvas .react-flow__controls {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: var(--elevation-2) !important;
+}
+.system-builder-canvas .react-flow__controls-button {
+  background: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+  fill: hsl(var(--muted-foreground)) !important;
+}
+.system-builder-canvas .react-flow__controls-button:hover {
+  background: hsl(var(--muted)) !important;
+}

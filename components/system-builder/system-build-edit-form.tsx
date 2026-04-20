@@ -147,13 +147,13 @@ export function SystemBuildEditForm({ build, systems }: SystemBuildEditFormProps
       <button
         type="button"
         onClick={() => setConfigOpen((prev) => !prev)}
-        className="shrink-0 w-6 flex items-center justify-center border-y border-r rounded-r-md bg-muted/50 hover:bg-muted transition-colors"
+        className="shrink-0 w-6 flex items-center justify-center border-y border-r rounded-r-md bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
         title={configOpen ? 'Collapse panel' : 'Expand panel'}
       >
         {configOpen ? (
-          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          <ChevronLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         )}
       </button>
 

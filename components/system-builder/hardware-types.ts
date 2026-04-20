@@ -92,8 +92,10 @@ export const hardwareTypes: HardwareType[] = [
   { id: 'label', label: 'Label', category: 'generic', icon: Tag, defaultSpecs: [] },
 ]
 
+const hardwareTypeMap = new Map(hardwareTypes.map((t) => [t.id, t]))
+
 export function getHardwareType(id: string): HardwareType | undefined {
-  return hardwareTypes.find((t) => t.id === id)
+  return hardwareTypeMap.get(id)
 }
 
 export function getHardwareByCategory(category: HardwareCategory): HardwareType[] {

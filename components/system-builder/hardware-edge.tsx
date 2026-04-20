@@ -28,7 +28,7 @@ function HardwareEdgeComponent({
     targetY,
     sourcePosition,
     targetPosition,
-    borderRadius: 8,
+    borderRadius: 12,
   })
 
   const color = data?.color || '#3b82f6'
@@ -43,17 +43,22 @@ function HardwareEdgeComponent({
       <BaseEdge
         id={`${id}-base`}
         path={edgePath}
-        style={{ strokeWidth: 2, stroke: '#3F3F46', fill: 'none' }}
+        style={{
+          strokeWidth: selected ? 2.5 : 2,
+          stroke: selected ? `${color}40` : 'hsl(var(--border))',
+          fill: 'none',
+        }}
       />
       <BaseEdge
         id={id}
         path={edgePath}
         style={{
-          strokeWidth: selected ? 2.5 : 2,
+          strokeWidth: selected ? 2.5 : 1.5,
           stroke: color,
           fill: 'none',
           strokeDasharray: '4 8',
-          animation: 'dash-flow 1s linear infinite',
+          animation: 'dash-flow 0.8s linear infinite',
+          opacity: selected ? 1 : 0.7,
         }}
       />
     </>
