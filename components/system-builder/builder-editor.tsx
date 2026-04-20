@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
-import { useTheme } from 'next-themes'
 import {
   ReactFlow,
   Background,
@@ -40,7 +39,6 @@ export default function BuilderEditor({
   onChange,
   readOnly,
 }: BuilderEditorProps) {
-  const { resolvedTheme } = useTheme()
   const reactFlowRef = useRef<ReactFlowInstance | null>(null)
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
@@ -143,8 +141,6 @@ export default function BuilderEditor({
     []
   )
 
-  const colorMode = resolvedTheme === 'light' ? 'light' : 'dark'
-
   return (
     <div className="system-builder-canvas relative h-full min-h-[500px] rounded-lg border bg-background">
       <ReactFlow
@@ -167,7 +163,7 @@ export default function BuilderEditor({
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
         proOptions={{ hideAttribution: true }}
-        colorMode={colorMode}
+        colorMode="dark"
       >
         <Background gap={20} size={0.8} color="hsl(var(--border))" style={{ opacity: 0.6 }} />
         <Controls showInteractive={false} />
