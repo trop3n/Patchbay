@@ -23,22 +23,35 @@ export function DeleteBuildButton({ buildId, buildTitle }: DeleteBuildButtonProp
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open)
+    if (!open) setError(null)
+  }
 
   async function handleDelete() {
     setIsDeleting(true)
-    const result = await deleteSystemBuild(buildId)
+    setError(null)
 
-    if (result.success) {
-      router.push('/system-builder')
-    } else {
-      console.error(result.error)
+    try {
+      const result = await deleteSystemBuild(buildId)
+
+      if (result.success) {
+        router.push('/system-builder')
+        return
+      }
+
+      setError(result.error ?? 'Failed to delete build')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete build')
+    } finally {
       setIsDeleting(false)
-      setIsOpen(false)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="destructive">Delete</Button>
       </DialogTrigger>
@@ -49,8 +62,17 @@ export function DeleteBuildButton({ buildId, buildTitle }: DeleteBuildButtonProp
             Are you sure you want to delete &quot;{buildTitle}&quot;? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isDeleting}
+          >
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
