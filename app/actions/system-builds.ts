@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { createAuditLog } from '@/lib/audit'
@@ -49,7 +50,7 @@ export async function createSystemBuild(data: unknown) {
       data: {
         title: validated.data.title,
         description: validated.data.description ?? undefined,
-        data: validated.data.data ?? { nodes: [], edges: [] },
+        data: (validated.data.data ?? { nodes: [], edges: [] }) as Prisma.InputJsonValue,
         systemId: validated.data.systemId ?? undefined,
         createdById: session.user.id,
       },
@@ -88,7 +89,7 @@ export async function updateSystemBuild(id: string, data: unknown) {
 
     if (validated.data.title !== undefined) updateData.title = validated.data.title
     if (validated.data.description !== undefined) updateData.description = validated.data.description
-    if (validated.data.data !== undefined) updateData.data = validated.data.data
+    if (validated.data.data !== undefined) updateData.data = validated.data.data as Prisma.InputJsonValue
     if (validated.data.systemId !== undefined) updateData.systemId = validated.data.systemId
 
     const build = await prisma.systemBuild.update({
