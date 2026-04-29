@@ -33,6 +33,14 @@ interface BuilderEditorProps {
   readOnly?: boolean
 }
 
+function withDefaultSize(nodes: Node[]): Node[] {
+  return nodes.map((n) =>
+    n.type === 'hardware' && (n.width == null || n.height == null)
+      ? { ...n, width: n.width ?? 208, height: n.height ?? 100 }
+      : n
+  )
+}
+
 export default function BuilderEditor({
   initialNodes = [],
   initialEdges = [],
@@ -40,7 +48,7 @@ export default function BuilderEditor({
   readOnly,
 }: BuilderEditorProps) {
   const reactFlowRef = useRef<ReactFlowInstance | null>(null)
-  const [nodes, setNodes] = useState<Node[]>(initialNodes)
+  const [nodes, setNodes] = useState<Node[]>(() => withDefaultSize(initialNodes))
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
   const nodesRef = useRef<Node[]>(nodes)
   const onChangeRef = useRef(onChange)
@@ -121,6 +129,8 @@ export default function BuilderEditor({
         id: `${typeId}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
         type: 'hardware',
         position,
+        width: 208,
+        height: 100,
         data: {
           hardwareTypeId: typeId,
           label: hwType.label,

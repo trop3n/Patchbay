@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { Handle, Position } from '@xyflow/react'
+import { Handle, Position, NodeResizer } from '@xyflow/react'
 import { cn } from '@/lib/utils'
 import { getHardwareType, categoryColors } from './hardware-types'
 import type { NodeProps, Node } from '@xyflow/react'
@@ -23,11 +23,19 @@ function HardwareNodeComponent({ data, selected }: NodeProps<HardwareNodeType>) 
   return (
     <div
       className={cn(
-        'w-52 rounded-xl border bg-card shadow-lg transition-all duration-150',
+        'group/node relative w-full h-full min-w-[160px] min-h-[80px] rounded-xl border bg-card shadow-lg transition-all duration-150',
         selected ? 'ring-1 ring-primary/60 shadow-primary/10 shadow-xl' : 'hover:border-foreground/30'
       )}
       style={{ borderTopWidth: 2, borderTopColor: color }}
     >
+      <NodeResizer
+        color={color}
+        isVisible={selected}
+        minWidth={160}
+        minHeight={80}
+        handleClassName="!w-2 !h-2 !rounded-sm !border !border-background"
+        lineClassName="!border-primary/40"
+      />
       <Handle
         type="target"
         position={Position.Top}
