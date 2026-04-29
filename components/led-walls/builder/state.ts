@@ -17,6 +17,7 @@ export type BuilderAction =
   | { type: 'UPDATE_WALL_GROUP'; id: string; updates: Partial<Omit<WallGroup, 'id'>> }
   | { type: 'DELETE_WALL_GROUP'; id: string }
   | { type: 'MOVE_WALL_GROUP'; id: string; x: number; y: number }
+  | { type: 'RESIZE_WALL_GROUP'; id: string; cols: number; rows: number }
   | { type: 'ADD_CONTROLLER'; controller: Controller }
   | { type: 'UPDATE_CONTROLLER'; id: string; updates: Partial<Omit<Controller, 'id'>> }
   | { type: 'DELETE_CONTROLLER'; id: string }
@@ -161,6 +162,50 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
           ),
         },
       }
+
+    case 'RESIZE_WALL_GROUP': {
+      const target = state.data.wallGroups.find((g) => g.id === action.id)
+      if (!target) return state
+      const cols = Math.max(1, Math.floor(action.cols))
+      const rows = Math.max(1, Math.floor(action.rows))
+      if (target.cols === cols && target.rows === rows) return state
+      const maxIndex = cols * rows
+      const wallGroups = state.data.wallGroups.map((g) => {
+        if (g.id !== action.id) return g
+        return {
+          ...g,
+          cols,
+          rows,
+          controllerAssignments: g.controllerAssignments
+            .map((a) => ({ ...a, panelIndices: a.panelIndices.filter((i) => i < maxIndex) }))
+            .filter((a) => a.panelIndices.length > 0),
+        }
+      })
+      const controllers = state.data.controllers.map((c) => ({
+        ...c,
+        ports: c.ports.map((p) => ({
+          ...p,
+          assignedPanels: p.assignedPanels
+            .map((ap) =>
+              ap.groupId === action.id
+                ? { ...ap, panelIndices: ap.panelIndices.filter((i) => i < maxIndex) }
+                : ap
+            )
+            .filter((ap) => ap.panelIndices.length > 0),
+        })),
+      }))
+      const powerLines = state.data.powerLines.map((pl) => ({
+        ...pl,
+        assignedPanels: pl.assignedPanels
+          .map((ap) =>
+            ap.groupId === action.id
+              ? { ...ap, panelIndices: ap.panelIndices.filter((i) => i < maxIndex) }
+              : ap
+          )
+          .filter((ap) => ap.panelIndices.length > 0),
+      }))
+      return { ...state, data: { ...state.data, wallGroups, controllers, powerLines } }
+    }
 
     case 'ADD_CONTROLLER':
       return {

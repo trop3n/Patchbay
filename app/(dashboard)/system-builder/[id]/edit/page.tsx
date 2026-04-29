@@ -19,7 +19,7 @@ export default async function EditSystemBuildPage({ params }: EditSystemBuildPag
   }
 
   return (
-    <div className="h-full">
+    <div className="flex-1 min-h-0 flex flex-col">
       <SystemBuildEditForm build={build} systems={systems} />
     </div>
   )

@@ -102,7 +102,7 @@ export default function LedWallBuilderV2({ initialData, onChange, readOnly }: Le
 
   return (
     <BuilderContext.Provider value={{ state, dispatch }}>
-      <div className="flex flex-col h-full min-h-[500px] rounded-lg border border-zinc-800 overflow-hidden bg-zinc-950">
+      <div className="flex flex-col flex-1 h-full min-h-[500px] rounded-lg border border-zinc-800 overflow-hidden bg-zinc-950">
         <div className="flex flex-1 min-h-0">
           {!readOnly && (
             <>

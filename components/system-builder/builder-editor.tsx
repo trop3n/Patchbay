@@ -142,7 +142,7 @@ export default function BuilderEditor({
   )
 
   return (
-    <div className="system-builder-canvas relative h-full min-h-[500px] rounded-lg border bg-background">
+    <div className="system-builder-canvas relative flex-1 h-full min-h-[500px] rounded-lg border bg-background">
       <ReactFlow
         nodes={nodes}
         edges={edges}

@@ -77,7 +77,7 @@ export function LedWallForm({ systems, systemId }: LedWallFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex h-full gap-0">
+    <form onSubmit={onSubmit} className="flex-1 min-h-0 flex gap-0">
       <div className={`shrink-0 flex transition-all duration-200 ${configOpen ? 'w-96' : 'w-0'}`}>
         <Card className={`overflow-hidden border-r rounded-r-none flex flex-col transition-all duration-200 ${configOpen ? 'w-96 opacity-100' : 'w-0 opacity-0 border-0'}`}>
           <CardHeader>
@@ -165,7 +165,7 @@ export function LedWallForm({ systems, systemId }: LedWallFormProps) {
         )}
       </button>
 
-      <div className="flex-1 min-w-0 pl-4">
+      <div className="flex-1 min-w-0 min-h-0 pl-4 flex flex-col">
         <LedWallBuilderV2
           onChange={handleBuilderChange}
         />

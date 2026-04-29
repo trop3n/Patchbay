@@ -23,6 +23,7 @@ export function WallGroup({ group, zoom, onEdit, readOnly }: WallGroupProps) {
   const isSelected = state.selectedGroupId === group.id
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
 
   const spec = ledPanelCatalog.find((s) => s.id === group.panelSpecId)
   const totalPanels = group.rows * group.cols
@@ -64,6 +65,41 @@ export function WallGroup({ group, zoom, onEdit, readOnly }: WallGroupProps) {
     window.addEventListener('mouseup', handleMouseUp)
   }, [group.id, group.x, group.y, zoom, dispatch, readOnly, isDragging])
 
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    if (readOnly) return
+    e.stopPropagation()
+    e.preventDefault()
+    dispatch({ type: 'SELECT_GROUP', id: group.id })
+    setIsResizing(true)
+
+    const startClientX = e.clientX
+    const startClientY = e.clientY
+    const startCols = group.cols
+    const startRows = group.rows
+    let lastCols = startCols
+    let lastRows = startRows
+
+    function handleMouseMove(ev: MouseEvent) {
+      const dx = (ev.clientX - startClientX) / zoom
+      const dy = (ev.clientY - startClientY) / zoom
+      const newCols = Math.max(1, startCols + Math.round(dx / CELL_SIZE))
+      const newRows = Math.max(1, startRows + Math.round(dy / CELL_SIZE))
+      if (newCols === lastCols && newRows === lastRows) return
+      lastCols = newCols
+      lastRows = newRows
+      dispatch({ type: 'RESIZE_WALL_GROUP', id: group.id, cols: newCols, rows: newRows })
+    }
+
+    function handleMouseUp() {
+      setIsResizing(false)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+  }, [group.id, group.cols, group.rows, zoom, dispatch, readOnly])
+
   function handleDelete(e: React.MouseEvent) {
     e.stopPropagation()
     dispatch({ type: 'DELETE_WALL_GROUP', id: group.id })
@@ -77,8 +113,8 @@ export function WallGroup({ group, zoom, onEdit, readOnly }: WallGroupProps) {
   return (
     <div
       className={cn(
-        'absolute select-none',
-        isDragging && 'z-10',
+        'group/wall absolute select-none',
+        (isDragging || isResizing) && 'z-10',
       )}
       style={{
         left: group.x,
@@ -91,7 +127,7 @@ export function WallGroup({ group, zoom, onEdit, readOnly }: WallGroupProps) {
     >
       <div
         className={cn(
-          'rounded-md border overflow-hidden',
+          'relative rounded-md border overflow-hidden',
           isSelected ? 'border-blue-500 ring-1 ring-blue-500/50' : 'border-zinc-700',
         )}
       >
@@ -147,6 +183,34 @@ export function WallGroup({ group, zoom, onEdit, readOnly }: WallGroupProps) {
           </div>
           <WiringOverlay group={group} cellSize={CELL_SIZE} />
         </div>
+
+        {!readOnly && (
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className={cn(
+              'absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-20',
+              'opacity-0 group-hover/wall:opacity-100 transition-opacity',
+              (isSelected || isResizing) && 'opacity-100',
+            )}
+            title="Drag to resize"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              className={cn(
+                'w-full h-full',
+                isResizing ? 'text-blue-400' : 'text-zinc-400 hover:text-blue-400',
+              )}
+            >
+              <path
+                d="M14 6 L6 14 M14 10 L10 14 M14 14 L14 14"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          </div>
+        )}
       </div>
     </div>
   )
