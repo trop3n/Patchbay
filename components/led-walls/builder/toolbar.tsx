@@ -2,7 +2,7 @@
 
 import { useBuilder } from './state'
 import { Button } from '@/components/ui/button'
-import { ZoomIn, ZoomOut, Undo2, Redo2, Maximize, Magnet, Unplug } from 'lucide-react'
+import { ZoomIn, ZoomOut, Undo2, Redo2, Maximize, Magnet, Unplug, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
@@ -143,10 +143,48 @@ export function Toolbar({ onResetView }: ToolbarProps) {
 
       <div className="flex-1" />
 
+      {(state.selectedPortSelection || state.selectedPowerLineId) && state.selectedGroupId && (
+        <div className="flex items-center gap-1 mr-2">
+          <span className="text-[10px] text-zinc-500 mr-1">Auto-route:</span>
+          {(['S', 'Z', 'N'] as const).map((pattern) => (
+            <Button
+              key={pattern}
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-zinc-400 hover:text-white"
+              onClick={() => {
+                if (!state.selectedGroupId) return
+                if (state.selectedPortSelection) {
+                  dispatch({
+                    type: 'AUTO_ROUTE_PORT',
+                    controllerId: state.selectedPortSelection.controllerId,
+                    portIndex: state.selectedPortSelection.portIndex,
+                    groupId: state.selectedGroupId,
+                    pattern,
+                  })
+                } else if (state.selectedPowerLineId) {
+                  dispatch({
+                    type: 'AUTO_ROUTE_POWER_LINE',
+                    powerLineId: state.selectedPowerLineId,
+                    groupId: state.selectedGroupId,
+                    pattern,
+                  })
+                }
+              }}
+              title={`Fill chain in ${pattern}-pattern`}
+            >
+              <Wand2 className="w-3 h-3 mr-1" />
+              {pattern}
+            </Button>
+          ))}
+        </div>
+      )}
+
       {state.selectedPortSelection && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">
-            Assigning port &middot; ESC to release
+            Click panels in chain order &middot; ESC to release
           </span>
         </div>
       )}
@@ -154,7 +192,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
       {state.selectedPowerLineId && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded">
-            Assigning power &middot; ESC to release
+            Click panels in chain order &middot; ESC to release
           </span>
         </div>
       )}

@@ -13,8 +13,8 @@ interface PanelCellProps {
 
 export function PanelCell({ group, panelIndex, readOnly }: PanelCellProps) {
   const { state, dispatch } = useBuilder()
-  const { selectedPortSelection, selectedPowerLineId } = state
-  const { controllers } = state.data
+  const { selectedPortSelection, selectedPowerLineId, wiringDisplay } = state
+  const { controllers, powerLines } = state.data
 
   const assignment = group.controllerAssignments.find((a) =>
     a.panelIndices.includes(panelIndex)
@@ -23,6 +23,19 @@ export function PanelCell({ group, panelIndex, readOnly }: PanelCellProps) {
   const portColor = assignment
     ? getPortColor(assignment.controllerId, assignment.portIndex, controllers)
     : null
+
+  const portChainIndex = assignment
+    ? assignment.panelIndices.indexOf(panelIndex)
+    : -1
+
+  const powerAssignment = powerLines
+    .flatMap((pl) => pl.assignedPanels.map((ap) => ({ pl, ap })))
+    .find(({ ap }) => ap.groupId === group.id && ap.panelIndices.includes(panelIndex))
+  const powerChainIndex = powerAssignment
+    ? powerAssignment.ap.panelIndices.indexOf(panelIndex)
+    : -1
+
+  const showChainIndex = wiringDisplay === 'signal' ? portChainIndex : powerChainIndex
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -73,12 +86,18 @@ export function PanelCell({ group, panelIndex, readOnly }: PanelCellProps) {
       )}
       title={`Panel [${row},${col}]${assignment ? ` — Port ${assignment.portIndex + 1}` : ''}`}
     >
-      <div
-        className={cn(
-          'w-3 h-3 rounded-full border',
-          portColor ? 'border-white/40 bg-white/20' : 'border-zinc-600 bg-zinc-800',
-        )}
-      />
+      {showChainIndex >= 0 ? (
+        <span className="text-[10px] leading-none font-bold text-white drop-shadow">
+          {showChainIndex + 1}
+        </span>
+      ) : (
+        <div
+          className={cn(
+            'w-3 h-3 rounded-full border',
+            portColor ? 'border-white/40 bg-white/20' : 'border-zinc-600 bg-zinc-800',
+          )}
+        />
+      )}
       <span className={cn(
         'text-[7px] leading-none font-medium',
         portColor ? 'text-white/70' : 'text-zinc-600',

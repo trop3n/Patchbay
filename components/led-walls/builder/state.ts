@@ -35,6 +35,8 @@ export type BuilderAction =
   | { type: 'REMOVE_PANEL_SPEC'; specId: string }
   | { type: 'SELECT_PANEL_SPEC'; specId: string | null }
   | { type: 'SET_WIRING_DISPLAY'; mode: 'power' | 'signal' }
+  | { type: 'AUTO_ROUTE_PORT'; controllerId: string; portIndex: number; groupId: string; pattern: 'S' | 'Z' | 'N' }
+  | { type: 'AUTO_ROUTE_POWER_LINE'; powerLineId: string; groupId: string; pattern: 'S' | 'Z' | 'N' }
   | { type: 'DISCONNECT_ALL' }
   | { type: 'UNDO' }
   | { type: 'REDO' }
@@ -49,6 +51,46 @@ export interface BuilderState {
   wiringDisplay: 'power' | 'signal'
   undoStack: LedWallDataV2[]
   redoStack: LedWallDataV2[]
+}
+
+function computeAutoRouteOrder(rows: number, cols: number, pattern: 'S' | 'Z' | 'N'): number[] {
+  const out: number[] = []
+  if (pattern === 'Z') {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) out.push(r * cols + c)
+    }
+    return out
+  }
+  if (pattern === 'S') {
+    for (let r = 0; r < rows; r++) {
+      if (r % 2 === 0) {
+        for (let c = 0; c < cols; c++) out.push(r * cols + c)
+      } else {
+        for (let c = cols - 1; c >= 0; c--) out.push(r * cols + c)
+      }
+    }
+    return out
+  }
+  for (let c = 0; c < cols; c++) {
+    if (c % 2 === 0) {
+      for (let r = 0; r < rows; r++) out.push(r * cols + c)
+    } else {
+      for (let r = rows - 1; r >= 0; r--) out.push(r * cols + c)
+    }
+  }
+  return out
+}
+
+function mergeOrdered(existing: number[], incoming: number[]): number[] {
+  const seen = new Set(existing)
+  const result = [...existing]
+  for (const i of incoming) {
+    if (!seen.has(i)) {
+      seen.add(i)
+      result.push(i)
+    }
+  }
+  return result
 }
 
 function deriveActivePanelSpecs(data: LedWallDataV2): string[] {
@@ -261,7 +303,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
                 ...p,
                 assignedPanels: p.assignedPanels.map((a) =>
                   a.groupId === action.groupId
-                    ? { ...a, panelIndices: [...new Set([...a.panelIndices, ...action.panelIndices])] }
+                    ? { ...a, panelIndices: mergeOrdered(a.panelIndices, action.panelIndices) }
                     : a
                 ),
               }
@@ -284,7 +326,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
             ...g,
             controllerAssignments: g.controllerAssignments.map((a) =>
               a.controllerId === action.controllerId && a.portIndex === action.portIndex
-                ? { ...a, panelIndices: [...new Set([...a.panelIndices, ...action.panelIndices])] }
+                ? { ...a, panelIndices: mergeOrdered(a.panelIndices, action.panelIndices) }
                 : a
             ),
           }
@@ -374,7 +416,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
             ...pl,
             assignedPanels: pl.assignedPanels.map((a) =>
               a.groupId === action.groupId
-                ? { ...a, panelIndices: [...new Set([...a.panelIndices, ...action.panelIndices])] }
+                ? { ...a, panelIndices: mergeOrdered(a.panelIndices, action.panelIndices) }
                 : a
             ),
           }
@@ -434,6 +476,57 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
 
     case 'SET_WIRING_DISPLAY':
       return { ...state, wiringDisplay: action.mode }
+
+    case 'AUTO_ROUTE_PORT': {
+      const group = state.data.wallGroups.find((g) => g.id === action.groupId)
+      if (!group) return state
+      const order = computeAutoRouteOrder(group.rows, group.cols, action.pattern)
+      const undo = pushUndo(state)
+      const controllers = state.data.controllers.map((c) => {
+        if (c.id !== action.controllerId) return c
+        return {
+          ...c,
+          ports: c.ports.map((p) => {
+            if (p.portIndex !== action.portIndex) return p
+            const others = p.assignedPanels.filter((a) => a.groupId !== action.groupId)
+            return {
+              ...p,
+              assignedPanels: [...others, { groupId: action.groupId, panelIndices: order }],
+            }
+          }),
+        }
+      })
+      const wallGroups = state.data.wallGroups.map((g) => {
+        if (g.id !== action.groupId) return g
+        const others = g.controllerAssignments.filter(
+          (a) => !(a.controllerId === action.controllerId && a.portIndex === action.portIndex)
+        )
+        return {
+          ...g,
+          controllerAssignments: [
+            ...others,
+            { controllerId: action.controllerId, portIndex: action.portIndex, panelIndices: order },
+          ],
+        }
+      })
+      return { ...state, ...undo, data: { ...state.data, controllers, wallGroups } }
+    }
+
+    case 'AUTO_ROUTE_POWER_LINE': {
+      const group = state.data.wallGroups.find((g) => g.id === action.groupId)
+      if (!group) return state
+      const order = computeAutoRouteOrder(group.rows, group.cols, action.pattern)
+      const undo = pushUndo(state)
+      const powerLines = state.data.powerLines.map((pl) => {
+        if (pl.id !== action.powerLineId) return pl
+        const others = pl.assignedPanels.filter((a) => a.groupId !== action.groupId)
+        return {
+          ...pl,
+          assignedPanels: [...others, { groupId: action.groupId, panelIndices: order }],
+        }
+      })
+      return { ...state, ...undo, data: { ...state.data, powerLines } }
+    }
 
     case 'DISCONNECT_ALL': {
       const undo = pushUndo(state)
